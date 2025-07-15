@@ -1,0 +1,23 @@
+node_modules
+
+### Python / Django ###
+# 仮想環境
+backend/venv/
+
+# Djangoのキャッシュ
+backend/__pycache__/
+
+# 開発用データベース
+backend/db.sqlite3
+
+# Pythonのコンパイル済みファイル
+backend/*.pyc
+
+# 環境変数ファイル (バックエンド用)
+backend/.env
+
+backend/api/__pycache__/
+backend/api/management/__pycache__/
+backend/api/management/commands/__pycache__/
+backend/api/migrations/__pycache__/
+backend/config/__pycache__/
