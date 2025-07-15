@@ -1,288 +1,297 @@
 import os
 import re
-import datetime
-
-from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
-
+import time
+import pandas as pd
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium_stealth import stealth
-from bs4 import BeautifulSoup
+import argparse
+import datetime
+from django.core.management.base import BaseCommand
+from datetime import datetime
 
-from api.models import Race, Horse, Jockey, Trainer, Entry
-
-
-# ============ 共通ヘルパ ============ #
-def parse_sex_age(sex_age_str: str):
-    if not sex_age_str:
-        return None, None
-    return sex_age_str[0], (
-        int(re.search(r"\d+", sex_age_str).group())
-        if re.search(r"\d+", sex_age_str)
-        else None
-    )
+from api.models import Race, Horse, Jockey, Trainer, Entry, HorsePastRace
 
 
-def parse_horse_weight(weight_str: str):
-    if not weight_str or weight_str.strip("-") == "":
-        return None, None
-    m = re.match(r"^(\d+)\s*(?:$([-+]?\d+)$)?$", weight_str)
-    if not m:
-        return None, None
-    return int(m.group(1)), int(m.group(2)) if m.group(2) else None
+class Command(BaseCommand):
+    help = "指定した race_id のレース情報を取得します"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "race_id", type=str, help="取得したいレースID（例: 202406030811）"
+        )
+
+    def handle(self, *args, **options):
+        race_id = options["race_id"]
+        # main関数を呼び出す（race_id を引数として渡す）
+        main(race_id)
 
 
-def to_int(val):
-    try:
-        return int(val.replace(",", ""))
-    except Exception:
-        return None
-
-
-def to_float(val):
-    try:
-        return float(val.replace(",", ""))
-    except Exception:
-        return None
-
-
-# ============ スクレイパ ============ #
 class NetkeibaRaceAnalyzer:
-    WAIT_SEC = 10
-
-    def __init__(self, headless=True):
-        opts = webdriver.ChromeOptions()
-        if headless:
-            opts.add_argument("--headless=new")
-        opts.add_argument("--no-sandbox")
-        opts.add_argument("--disable-dev-shm-usage")
-        opts.add_argument("start-maximized")
-        opts.add_experimental_option("excludeSwitches", ["enable-automation"])
-        opts.add_experimental_option("useAutomationExtension", False)
-        opts.add_argument(
-            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36"
+    def __init__(self):
+        options = webdriver.ChromeOptions()
+        # options.add_argument("--headless")  # ヘッドレスモード
+        # options.add_argument('--window-size=1920,1080') # ヘッドレスモードで要素を正しく認識させるため
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
 
-        self.driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()), options=opts
-        )
+        service = Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=service, options=options)
+        self.db_base_url = "https://db.netkeiba.com"
 
-        stealth(
-            self.driver,
-            languages=["ja-JP", "ja"],
-            vendor="Google Inc.",
-            platform="Win32",
-            webgl_vendor="Intel Inc.",
-            renderer="Intel Iris OpenGL Engine",
-            fix_hairline=True,
-        )
-
-    # ------------------------------------------------------------------ #
     def close(self):
         if self.driver:
             self.driver.quit()
 
-    # ------------------------------------------------------------------ #
-    def scrape(self, race_id: str):
+    def get_race_entry(self, race_id):
         url = f"https://race.netkeiba.com/race/shutuba.html?race_id={race_id}"
-        self.driver.get(url)
-
+        print(f"出馬表URLにアクセス: {url}")
         try:
-            WebDriverWait(self.driver, self.WAIT_SEC).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "h1.RaceName"))
+            self.driver.get(url)
+            try:
+                error_box = self.driver.find_element(By.CLASS_NAME, "Race_Error_Box")
+                if error_box:
+                    print(
+                        "-> エラー: レース情報が見つかりませんでした。指定されたrace_idが正しいか確認してください。"
+                    )
+                    return []
+            except:
+                # エラーボックスがなければ正常なので、何もしない
+                pass
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "table[class*='RaceTable']")
+                )
             )
+            html = self.driver.page_source
+            soup = BeautifulSoup(html, "html.parser")
+
+            race_name_tag = soup.select_one("h1.RaceName")
+            race_data01 = soup.select_one("div.RaceData01")
+
+            venue_spans = soup.find("div", class_="RaceData02").find_all("span")
+            venue = venue_spans[1].get_text(strip=True)
+            if not (race_name_tag and race_data01):
+                raise RuntimeError("RaceName または RaceData01 が取得できません")
+            course_details = race_name_tag.find("span").get_text(strip=True)
+            race_name = race_name_tag.text.strip()
+
+            dd = soup.find("dd", class_="Active")
+            a_tag = dd.find("a")
+            if not a_tag:
+                raise RuntimeError("開催日付のタグが見つかりません")
+            date_text = a_tag.contents[0].strip()
+            year = race_id[:4]
+            full_date = f"{year}年{date_text}"
+            race_date = datetime.strptime(full_date, "%Y年%m月%d日").date()
+
+            race, created = Race.objects.get_or_create(
+                race_id=race_id,
+                defaults={
+                    "race_name": race_name,
+                    "race_date": race_date,
+                    "venue": venue,
+                    "course_details": course_details,
+                },
+            )
+            if created:
+                print(f"{race_id} をDBに新規作成しました。")
+            else:
+                print(f"{race_id} はすでにDBに存在します。スキップします。")
+
+            table = soup.find("table", class_=["Shutuba_Table", "RegHorse_Table"])
+            if not table:
+                print("-> 出馬表または登録馬テーブルが見つかりませんでした。")
+                return []
+
+            rows = table.select("tbody tr")
+
+            for row in rows:
+                cells = row.find_all("td")
+
+                # 取得しようとするデータが存在しない可能性を考慮する
+                horse_link = cells[3].find("a") if len(cells) > 3 else None
+                horse_name = (
+                    horse_link.text.strip() if horse_link else cells[3].text.strip()
+                )
+                horse_id = (
+                    re.search(r"/horse/(\d+)", horse_link["href"]).group(1)
+                    if horse_link and "href" in horse_link.attrs
+                    else ""
+                )
+
+                waku = cells[0].text.strip() if len(cells) > 0 else ""
+                umaban = cells[1].text.strip() if len(cells) > 1 else ""
+                sex_age = cells[4].text.strip() if len(cells) > 4 else ""
+                weight_carried = cells[5].text.strip() if len(cells) > 5 else ""
+                jockey_name = cells[6].text.strip() if len(cells) > 6 else ""
+                trainer_name = cells[7].text.strip() if len(cells) > 7 else ""
+                horse_weight = cells[8].text.strip() if len(cells) > 8 else ""
+                odds = cells[9].text.strip() if len(cells) > 9 else ""
+                popularity = cells[10].text.strip() if len(cells) > 10 else ""
+
+                data = {
+                    "race_id": race_id,
+                    "waku": waku,
+                    "umaban": umaban,
+                    "horse_name": horse_name,
+                    "horse_id": horse_id,
+                    "sex_age": sex_age,
+                    "weight_carried": weight_carried,
+                    "jockey_name": jockey_name,
+                    "trainer_name": trainer_name,
+                    "horse_weight": horse_weight,
+                    "odds": odds,
+                    "popularity": popularity,
+                }
+                # entries.append(entry)
+
+                horse, created = Horse.objects.get_or_create(
+                    horse_id=data["horse_id"],
+                    defaults={"horse_name": data["horse_name"]},
+                )
+
+                entry, created = Entry.objects.get_or_create(
+                    race_id=data["race_id"],
+                    horse_id=data["horse_id"],
+                    defaults={
+                        "waku": to_int_or_none(data["waku"]),
+                        "umaban": to_int_or_none(data["umaban"]),
+                        "weight_carried": data["weight_carried"],
+                        "odds": data["odds"],
+                        "popularity": to_int_or_none(data["popularity"]),
+                    },
+                )
+
+                self.get_past_races(horse)
+
         except Exception as e:
-            raise RuntimeError(f"ページロードタイムアウト: {e}")
-
-        soup = BeautifulSoup(self.driver.page_source, "html.parser")
-        main_info = self._parse_main_info(soup, race_id)
-        entries = self._parse_entries(soup)
-        return main_info, entries
-
-    # --------------- private --------------- #
-    def _parse_main_info(self, soup, race_id):
-        race_name_tag = soup.select_one("h1.RaceName")
-        race_data01 = soup.select_one("div.RaceData01")
-        race_data02_span = soup.select_one("div.RaceData02 span")
-
-        if not (race_name_tag and race_data01):
-            raise RuntimeError("RaceName または RaceData01 が取得できません")
-
-        race_name = race_name_tag.text.strip()
-
-        m = re.search(r"(\d{4}年\d{1,2}月\d{1,2}日)", race_data01.text)
-        if not m:
-            raise RuntimeError("開催日付が取得できません")
-        race_date = datetime.datetime.strptime(m.group(1), "%Y年%m月%d日").date()
-
-        venue = None
-        parts = race_data01.text.split()
-        if len(parts) > 1:
-            venue = parts[1]
-
-        course_details = ground_condition = None
-        if race_data02_span:
-            tmp = race_data02_span.text.strip().split("/")
-            if tmp:
-                course_details = tmp[0].strip()
-            if len(tmp) > 1 and ":" in tmp[-1]:
-                ground_condition = tmp[-1].split(":")[-1].strip()
-
-        return dict(
-            race_id=race_id,
-            race_name=race_name,
-            race_date=race_date,
-            venue=venue,
-            course_details=course_details,
-            ground_condition=ground_condition,
-        )
-
-    def _parse_entries(self, soup):
-        table = soup.select_one("table.Shutuba_Table, table.RegHorse_Table")
-        if not table:
+            print(f"出馬表取得中にエラー: {e}")
             return []
 
-        entries = []
-        for tr in table.select("tbody tr"):
-            tds = tr.find_all("td")
-            if len(tds) < 10:
-                continue
+    def get_past_races(self, horse, limit=10):
+        horse_id = horse.horse_id
+        horse_name = horse.horse_name
+        print("\n=== 馬情報取得開始 ===")
+        print(f"{horse_name}")
+        if not horse_id:
+            return []
+        url = f"{self.db_base_url}/horse/{horse_id}/"
+        time.sleep(1)
 
-            horse_link = tds[3].select_one("a[href*='/horse/']")
-            jockey_link = tds[6].select_one("a[href*='/jockey/']")
-            trainer_link = tds[7].select_one("a[href*='/trainer/']")
-
-            entry = {
-                "waku": tds[0].get_text(strip=True),
-                "umaban": tds[1].get_text(strip=True),
-                "horse_id": (
-                    re.search(r"/horse/(\d+)", horse_link["href"]).group(1)
-                    if horse_link
-                    else None
-                ),
-                "horse_name": tds[3].get_text(strip=True),
-                "sex_age": tds[4].get_text(strip=True),
-                "weight_carried": tds[5].get_text(strip=True),
-                "jockey_id": (
-                    re.search(r"/jockey/.+?/(\d+)", jockey_link["href"]).group(1)
-                    if jockey_link
-                    else None
-                ),
-                "jockey_name": tds[6].get_text(strip=True),
-                "trainer_id": (
-                    re.search(r"/trainer/.+?/(\d+)", trainer_link["href"]).group(1)
-                    if trainer_link
-                    else None
-                ),
-                "trainer_name": tds[7].get_text(strip=True),
-                "horse_weight_str": tds[8].get_text(strip=True),
-                "odds": tds[9].get_text(strip=True),
-            }
-            entries.append(entry)
-        return entries
-
-
-# ============ Django Management Command ============ #
-class Command(BaseCommand):
-    help = "指定 race_id の出馬表を取得し DB に保存"
-
-    def add_arguments(self, parser):
-        parser.add_argument("race_id", type=str, help="例: 202305020811 (12桁)")
-
-    # ---------------- handle ---------------- #
-    def handle(self, *args, **opts):
-        race_id = opts["race_id"]
-        headless = os.getenv("SCRAPE_HEADLESS", "1") == "1"
-
-        self.stdout.write(
-            self.style.NOTICE(f"▶ {race_id} 取得開始 (headless={headless})")
+        horse, _ = Horse.objects.get_or_create(
+            horse_id=horse_id, defaults={"horse_name": horse_name}
         )
-
-        analyzer = NetkeibaRaceAnalyzer(headless=headless)
         try:
-            main_info, entries = analyzer.scrape(race_id)
+            self.driver.get(url)
+            html = self.driver.page_source
+            soup = BeautifulSoup(html, "html.parser")
+            results = []
+            rows = soup.select(".db_h_race_results tbody tr")[:limit]
+            for row in rows:
+                cells = row.find_all("td")
+                if len(cells) < 20:
+                    continue
+                race_link = cells[4].find("a")
+                past_race_id_match = (
+                    re.search(r"/race/(\d+)", race_link["href"]) if race_link else None
+                )
+                result_data = {
+                    "date": cells[0].text.strip(),
+                    "venue": cells[1].text.strip(),
+                    "weather": cells[2].text.strip(),
+                    "race_name": race_link.text.strip() if race_link else "",
+                    "past_race_id": (
+                        past_race_id_match.group(1) if past_race_id_match else ""
+                    ),
+                    # "track_type": cells[4].text.strip(),
+                    "head_count": cells[6].text.strip(),
+                    "umaban": cells[7].text.strip(),
+                    "waku": cells[8].text.strip(),
+                    "odds": cells[9].text.strip(),
+                    "popularity": cells[10].text.strip(),
+                    "rank": cells[11].text.strip(),
+                    "jockey_name": cells[12].text.strip(),
+                    "weight_carried": cells[13].text.strip(),
+                    "distance": cells[14].text.strip(),
+                    "ground_condition": cells[15].text.strip(),
+                    "time": cells[17].text.strip(),
+                    "margin": cells[18].text.strip(),
+                    "passing": cells[20].text.strip(),
+                    "pace": cells[21].text.strip(),
+                    "last_3f": cells[22].text.strip(),
+                    "body_weight": cells[23].text.strip(),
+                }
+                print(result_data)
+                HorsePastRace.objects.update_or_create(
+                    horse=horse,
+                    past_race_id=result_data["past_race_id"],
+                    defaults={
+                        "race_date": parse_date(result_data["date"]),
+                        "venue": result_data["venue"],
+                        "race_name": result_data["race_name"],
+                        "weather": result_data["weather"],
+                        "head_count": to_int_or_none(result_data["head_count"]),
+                        "waku": to_int_or_none(result_data["waku"]),
+                        "umaban": to_int_or_none(result_data["umaban"]),
+                        "odds": to_float_or_none(result_data["odds"]),
+                        "popularity": to_int_or_none(result_data["popularity"]),
+                        "rank": to_int_or_none(result_data["rank"]),
+                        "jockey_name": result_data["jockey_name"],
+                        "weight_carried": result_data["weight_carried"],
+                        "distance": result_data["distance"],
+                        "ground_condition": result_data["ground_condition"],
+                        "time": result_data["time"],
+                        "margin": result_data["margin"],
+                        "passing": result_data["passing"],
+                        "pace": result_data["pace"],
+                        "last_3f": result_data["last_3f"],
+                        "body_weight": result_data["body_weight"],
+                    },
+                )
+            return results
         except Exception as e:
+            print(f"  -> 馬の成績取得エラー (ID: {horse_id}): {e}")
+            return []
+
+
+def to_int_or_none(value):
+    try:
+        return int(value) if value and value.strip().isdigit() else None
+    except:
+        return None
+
+
+def to_float_or_none(value):
+    try:
+        return float(value) if value else None
+    except:
+        return None
+
+
+def parse_date(value):
+    try:
+        return datetime.strptime(value, "%Y/%m/%d").date()
+    except:
+        return None
+
+
+def main(race_id: str):
+    analyzer = None
+    try:
+        analyzer = NetkeibaRaceAnalyzer()
+        analyzer.get_race_entry(race_id)
+
+        print("\n=== 処理完了 ===")
+    except Exception as e:
+        print(f"予期せぬエラーが発生しました: {e}")
+    finally:
+        if analyzer:
             analyzer.close()
-            raise CommandError(f"スクレイピング失敗: {e}")
-
-        self.stdout.write(self.style.SUCCESS("▷ HTML 解析完了"))
-
-        if not main_info or not entries:
-            analyzer.close()
-            raise CommandError("レース情報または出走表が取得できませんでした")
-
-        try:
-            with transaction.atomic():
-                self._save_to_db(main_info, entries)
-        finally:
-            analyzer.close()
-
-        self.stdout.write(self.style.SUCCESS("★ 完了"))
-
-    # ---------------- DB helper ---------------- #
-    def _save_to_db(self, main, entries):
-        race_obj, _ = Race.objects.update_or_create(
-            race_id=main["race_id"],
-            defaults=dict(
-                race_name=main["race_name"],
-                race_date=main["race_date"],
-                venue=main["venue"],
-                course_details=main["course_details"],
-                ground_condition=main["ground_condition"],
-            ),
-        )
-
-        for e in entries:
-            if not e["horse_id"]:
-                continue
-
-            sex, age = parse_sex_age(e["sex_age"])
-
-            horse_obj, _ = Horse.objects.update_or_create(
-                horse_id=e["horse_id"],
-                defaults=dict(
-                    horse_name=e["horse_name"],
-                    sex=sex,
-                    age=age,
-                ),
-            )
-
-            jockey_obj = None
-            if e["jockey_id"]:
-                jockey_obj, _ = Jockey.objects.update_or_create(
-                    jockey_id=e["jockey_id"],
-                    defaults=dict(jockey_name=e["jockey_name"]),
-                )
-
-            trainer_obj = None
-            if e["trainer_id"]:
-                trainer_obj, _ = Trainer.objects.update_or_create(
-                    trainer_id=e["trainer_id"],
-                    defaults=dict(trainer_name=e["trainer_name"]),
-                )
-                # 馬に調教師を紐づけ
-                if not horse_obj.trainer:
-                    horse_obj.trainer = trainer_obj
-                    horse_obj.save(update_fields=["trainer"])
-
-            horse_weight, horse_weight_diff = parse_horse_weight(e["horse_weight_str"])
-
-            Entry.objects.update_or_create(
-                race=race_obj,
-                horse=horse_obj,
-                defaults=dict(
-                    jockey=jockey_obj,
-                    waku=to_int(e["waku"]),
-                    umaban=to_int(e["umaban"]),
-                    weight_carried=to_float(e["weight_carried"]),
-                    odds=to_float(e["odds"]),
-                    horse_weight=horse_weight,
-                    horse_weight_diff=horse_weight_diff,
-                ),
-            )
