@@ -6,6 +6,7 @@ class Race(models.Model):
 
     race_id = models.CharField("レースID", max_length=20, primary_key=True)
     race_name = models.CharField("レース名", max_length=100, null=True, blank=True)
+    race_number = models.CharField("レース順", max_length=100, null=True, blank=True)
     race_date = models.DateField("開催日", null=True, blank=True)
     venue = models.CharField("開催地", max_length=50, null=True, blank=True)
     course_details = models.CharField("コース", max_length=50, null=True, blank=True)
@@ -115,7 +116,9 @@ class HorsePastRace(models.Model):
     )
     past_race_id = models.CharField(max_length=20, null=True, blank=True)
     race_date = models.DateField("レース日")
-    venue = models.CharField("開催地", max_length=20)
+    venue_round = models.CharField("開催回", max_length=20, null=True, blank=True)
+    venue_name = models.CharField("開催地", max_length=20, null=True, blank=True)
+    venue_day = models.CharField("開催日目", max_length=20 ,null=True, blank=True)
     race_name = models.CharField("レース名", max_length=100)
     weather = models.CharField("天気", max_length=10, null=True, blank=True)
     head_count = models.IntegerField("頭数", null=True, blank=True)
