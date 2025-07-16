@@ -1,3 +1,8 @@
 django==3.2.25
 django-cors-headers==4.2.0
 djangorestframework==3.13.1
+selenium>=4.0.0
+beautifulsoup4>=4.11.0
+pandas>=1.5.0
+mysqlclient>=2.1.0
+webdriver-manager>=3.8.3
