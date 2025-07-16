@@ -162,7 +162,7 @@ export default function RaceAnalyzerPage() {
               type='text'
               value={input}
               onChange={handleChange}
-              placeholder='レースIDまたはURLを入力 (例: 202305050811)'
+              placeholder='netkeiba.comのレースIDまたはURLを入力 (例: 202305050811)'
               className='flex-grow p-2 border rounded-md focus:ring-2 focus:ring-green focus:border-transparent disabled:bg-gray-200'
               disabled={status === 'loading'}
             />
