@@ -1,20 +1,23 @@
 'use client';
 
-import { useState, useEffect,FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { FaSpinner } from 'react-icons/fa';
-
-
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 interface PastRace {
   past_race_id: string;
   race_date: string;
-  venue: string;
+  venue_name: string;
   race_name: string;
   weather: string;
-  rank: number;
-  course_details: string;
+  distance: string;
+  head_count: number | null; // 18
+  rank: number | null; // 5
+  odds: number | null; // 10.5
+  popularity: number | null; // 4
+  umaban: number | null; // 10
+  jockey_name: string; // "横山 武史"
 }
 
 interface Horse {
@@ -37,6 +40,7 @@ interface RaceData {
   race_id: string;
   race_name: string;
   race_date: string;
+  race_number: string;
   venue: string;
   course_details: string;
   ground_condition: string | null;
@@ -54,8 +58,7 @@ export default function RaceAnalyzerPage() {
     omo: true,
     furyo: true,
   });
-  const [input, setInput] = useState('');
- 
+  const [input, setInput] = useState('202510020811');
 
   const extractRaceId = (value: string): string | null => {
     const urlParamMatch = value.match(/race_id=(\d{12})/);
@@ -76,7 +79,6 @@ export default function RaceAnalyzerPage() {
     if (extractedId) {
       setRaceId(extractedId);
     } else {
-      // IDが抽出できなければ状態をクリアするなど必要に応じて
       setRaceId('');
     }
   };
@@ -112,7 +114,26 @@ export default function RaceAnalyzerPage() {
     console.log('スクレイピングが完了しました。');
     setStatus('success');
   };
+  const getRankClass = (rank: number | null) => {
+    if (typeof rank !== 'number' || rank === 0) {
+      return 'text-gray-700';
+    }
 
+    switch (rank) {
+      case 1:
+        // 1着: ゴールド系の色で目立たせる
+        return 'text-amber-500 font-extrabold';
+      case 2:
+        // 2着: シルバー系の色
+        return 'text-slate-500 font-bold';
+      case 3:
+        // 3着: ブロンズ系の色
+        return 'text-orange-600 font-bold';
+      default:
+        // 4着以下は通常の文字色
+        return 'text-gray-700';
+    }
+  };
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = event.target;
     setTrackConditions((prev) => ({ ...prev, [name]: checked }));
@@ -218,8 +239,8 @@ export default function RaceAnalyzerPage() {
                   {results?.race_name}
                 </h2>
                 <p className='text-sm text-gray-600'>
-                  {results?.race_date} | {results?.venue} |{' '}
-                  {results?.course_details} | 馬場:{' '}
+                  {results?.race_date} | {results?.race_number}R |{' '}
+                  {results?.venue} | {results?.course_details} | 馬場:{' '}
                   {results?.ground_condition || '未発表'}
                 </p>
               </div>
@@ -227,7 +248,7 @@ export default function RaceAnalyzerPage() {
               <div className='space-y-8'>
                 {' '}
                 {/* カード間のスペース */}
-                {results.entries.map((entry) => (
+                {results?.entries.map((entry) => (
                   <div
                     key={entry.horse.horse_id}
                     className='border rounded-lg shadow-md overflow-hidden'
@@ -249,45 +270,95 @@ export default function RaceAnalyzerPage() {
                       <h4 className='text-md font-semibold mb-2 text-gray-700'>
                         過去の成績
                       </h4>
-                      <table className='min-w-full text-sm'>
-                        <thead className='bg-gray-50'>
-                          <tr>
-                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
-                              日付
-                            </th>
-                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
-                              レース名
-                            </th>
-                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
-                              コース
-                            </th>
-                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
-                              着順
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {entry.horse.past_races.map((pastRace) => (
-                            <tr
-                              key={pastRace.past_race_id}
-                              className='border-t'
-                            >
-                              <td className='py-2 px-3'>
-                                {pastRace.race_date}
-                              </td>
-                              <td className='py-2 px-3'>
-                                {pastRace.race_name}
-                              </td>
-                              <td className='py-2 px-3'>
-                                {pastRace.course_details}
-                              </td>
-                              <td className='py-2 px-3 font-semibold'>
-                                {pastRace.rank}着
-                              </td>
+                      <div className='overflow-x-auto shadow-md rounded-lg'>
+                        <table className='min-w-full divide-y divide-gray-200 bg-white'>
+                          <thead className='bg-gray-50'>
+                            <tr>
+                              {/* テーブルヘッダー */}
+                              <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                日付
+                              </th>
+                              <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                レース名
+                              </th>
+                              <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                開催地
+                              </th>
+                              <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                天気
+                              </th>
+                              <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                コース
+                              </th>
+                              <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                頭数
+                              </th>
+                              <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                着順
+                              </th>
+                              <th className='py-3 px-4 text-right text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                オッズ
+                              </th>
+                              <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                人気
+                              </th>
+                              <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                馬番
+                              </th>
+                              <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                                騎手名
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className='bg-white divide-y divide-gray-200'>
+                            {entry.horse.past_races.map((pastRace) => (
+                              <tr
+                                key={pastRace.past_race_id}
+                                className='hover:bg-gray-50'
+                              >
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900'>
+                                  {pastRace.race_date}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 font-medium'>
+                                  {pastRace.race_name}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900'>
+                                  {pastRace.venue_name}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                                  {pastRace.weather}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900'>
+                                  {pastRace.distance}
+                                </td>
+
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                                  {pastRace.head_count}
+                                </td>
+                                <td
+                                  className={`py-3 px-4 whitespace-nowrap text-sm text-center ${getRankClass(
+                                    pastRace.rank
+                                  )}`}
+                                >
+                                  {pastRace.rank}着
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-right'>
+                                  {pastRace.odds}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                                  {pastRace.popularity}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                                  {pastRace.umaban}
+                                </td>
+                                <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 '>
+                                  {pastRace.jockey_name}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 ))}
