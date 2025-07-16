@@ -41,6 +41,8 @@ class NetkeibaRaceAnalyzer:
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
+        options.add_argument("--disable-gpu")  # GPU無効化 (Windows)
+        options.add_argument("--disable-dev-shm-usage")  # Linux環境なら
 
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=options)
@@ -126,6 +128,46 @@ class NetkeibaRaceAnalyzer:
                     if horse_link and "href" in horse_link.attrs
                     else ""
                 )
+                # jockeyの処理
+                jockey_link = cells[6].find("a") if len(cells) > 6 else None
+                jockey_name = (
+                    jockey_link.text.strip() if jockey_link else cells[6].text.strip()
+                )
+                jockey_id = (
+                    re.search(
+                        r"/jockey/(?:result/\w+/)?(\d+)", jockey_link["href"]
+                    ).group(1)
+                    if jockey_link and "href" in jockey_link.attrs
+                    else ""
+                )
+                jockey_url = f"https://db.netkeiba.com/jockey/result/recent/{jockey_id}/"
+                jockey = Jockey.objects.filter(jockey_id=jockey_id).first()
+                if not jockey:
+                    self.driver.get(jockey_url)
+                    try:
+                        WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_element_located((By.TAG_NAME, "h1"))
+                        )
+                    except Exception as e:
+                        # h1タグが出るまでタイムアウト、騎手情報なしと判断
+                        print(f"Timeout: jockey page not ready for {jockey_id}")
+                        continue  # または continue / 適宜処理
+
+                    soup = BeautifulSoup(self.driver.page_source, "html.parser")
+                    name_tag = soup.find("h1")
+                    full_name = name_tag.text.strip() if name_tag else ""
+                    match = re.match(r"(.+?)（(.+?)）", full_name)
+                    if match:
+                        jockey_name_kanji = match.group(1)
+                        jockey = Jockey.objects.create(
+                            jockey_id=jockey_id,
+                            jockey_name=jockey_name_kanji
+                        )
+                    else:
+                        jockey_name_kanji = full_name    
+                        jockey = Jockey.objects.create(
+                            jockey_id=jockey_id, jockey_name=jockey_name_kanji
+                        )
 
                 waku = cells[0].text.strip() if len(cells) > 0 else ""
                 umaban = cells[1].text.strip() if len(cells) > 1 else ""
@@ -143,6 +185,7 @@ class NetkeibaRaceAnalyzer:
                     "umaban": umaban,
                     "horse_name": horse_name,
                     "horse_id": horse_id,
+                    "jockey_id": jockey_id,
                     "sex_age": sex_age,
                     "weight_carried": weight_carried,
                     "jockey_name": jockey_name,
@@ -162,6 +205,7 @@ class NetkeibaRaceAnalyzer:
                     race_id=data["race_id"],
                     horse_id=data["horse_id"],
                     defaults={
+                        "jockey_id":data["jockey_id"],
                         "waku": to_int_or_none(data["waku"]),
                         "umaban": to_int_or_none(data["umaban"]),
                         "weight_carried": data["weight_carried"],
@@ -170,13 +214,13 @@ class NetkeibaRaceAnalyzer:
                     },
                 )
 
-                self.get_past_races(horse)
+                self.get_past_races(horse, jockey_id)
 
         except Exception as e:
             print(f"出馬表取得中にエラー: {e}")
             return []
 
-    def get_past_races(self, horse, limit=10):
+    def get_past_races(self, horse, jockey_id,limit=10):
         horse_id = horse.horse_id
         horse_name = horse.horse_name
         print("\n=== 馬情報取得開始 ===")
@@ -211,7 +255,6 @@ class NetkeibaRaceAnalyzer:
                     "past_race_id": (
                         past_race_id_match.group(1) if past_race_id_match else ""
                     ),
-                    # "track_type": cells[4].text.strip(),
                     "head_count": cells[6].text.strip(),
                     "umaban": cells[7].text.strip(),
                     "waku": cells[8].text.strip(),
@@ -230,6 +273,11 @@ class NetkeibaRaceAnalyzer:
                     "body_weight": cells[23].text.strip(),
                 }
                 print(result_data)
+                Jockey.objects.update_or_create(
+                    jockey_id=jockey_id,
+                    defaults={"jockey_name": result_data["jockey_name"]},
+                )
+
                 HorsePastRace.objects.update_or_create(
                     horse=horse,
                     past_race_id=result_data["past_race_id"],
@@ -244,6 +292,7 @@ class NetkeibaRaceAnalyzer:
                         "odds": to_float_or_none(result_data["odds"]),
                         "popularity": to_int_or_none(result_data["popularity"]),
                         "rank": to_int_or_none(result_data["rank"]),
+                        "jockey_id": jockey_id,
                         "jockey_name": result_data["jockey_name"],
                         "weight_carried": result_data["weight_carried"],
                         "distance": result_data["distance"],
