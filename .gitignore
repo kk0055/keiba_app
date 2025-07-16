@@ -21,3 +21,72 @@ backend/api/management/__pycache__/
 backend/api/management/commands/__pycache__/
 backend/api/migrations/__pycache__/
 backend/config/__pycache__/
+
+### Node.js / Next.js ###
+# 依存パッケージ
+frontend/node_modules/
+
+# Next.jsのビルドキャッシュと成果物
+frontend/.next/
+frontend/out/
+
+# 環境変数ファイル (フロントエンド用)
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+
+# ログファイル
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+
+### OS / Editor ###
+# VSCodeの設定
+.vscode/
+
+# Macのシステムファイル
+.DS_Store
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

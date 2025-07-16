@@ -151,7 +151,7 @@ class NetkeibaRaceAnalyzer:
                     except Exception as e:
                         # h1タグが出るまでタイムアウト、騎手情報なしと判断
                         print(f"Timeout: jockey page not ready for {jockey_id}")
-                        continue  # または continue / 適宜処理
+                        continue 
 
                     soup = BeautifulSoup(self.driver.page_source, "html.parser")
                     name_tag = soup.find("h1")
