@@ -1,57 +1,115 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect,FormEvent, ChangeEvent } from 'react';
 import { FaSpinner } from 'react-icons/fa';
 
-// ダミーデータ
-const dummyResults = [
-  {
-    type: '出走情報',
-    horseName: 'イクイノックス',
-    jockey: 'ルメール',
-    odds: 1.5,
-    popularity: 1,
-  },
-  {
-    type: '出走情報',
-    horseName: 'リバティアイランド',
-    jockey: '川田',
-    odds: 3.2,
-    popularity: 2,
-  },
-  {
-    type: '過去成績',
-    horseName: 'イクイノックス',
-    raceName: '天皇賞(秋)',
-    rank: 1,
-    date: '2023-10-29',
-  },
-];
+
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
+
+interface PastRace {
+  past_race_id: string;
+  race_date: string;
+  venue: string;
+  race_name: string;
+  weather: string;
+  rank: number;
+  course_details: string;
+}
+
+interface Horse {
+  horse_id: string;
+  horse_name: string;
+  past_races: PastRace[];
+}
+
+interface Entry {
+  horse: Horse;
+  jockey: string | null;
+  odds: number;
+  popularity: number;
+  umaban: number | null;
+  waku: number | null;
+  weight_carried: number;
+}
+
+interface RaceData {
+  race_id: string;
+  race_name: string;
+  race_date: string;
+  venue: string;
+  course_details: string;
+  ground_condition: string | null;
+  entries: Entry[];
+}
 
 export default function RaceAnalyzerPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [raceId, setRaceId] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+
+  const [results, setResults] = useState<RaceData | null>(null);
   const [trackConditions, setTrackConditions] = useState({
     ryo: false,
     yayashige: false,
     omo: true,
     furyo: true,
   });
+  const [input, setInput] = useState('');
+ 
 
-  const handleExecute = async () => {
-    if (!raceId || status === 'loading') return;
+  const extractRaceId = (value: string): string | null => {
+    const urlParamMatch = value.match(/race_id=(\d{12})/);
+    if (urlParamMatch) return urlParamMatch[1];
 
+    const pathMatch = value.match(/\/race\/(\d{12})\/?/);
+    if (pathMatch) return pathMatch[1];
+
+    const idOnlyMatch = value.match(/^(\d{12})$/);
+    if (idOnlyMatch) return idOnlyMatch[1];
+
+    return null;
+  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    setInput(inputValue);
+    const extractedId = extractRaceId(inputValue);
+    if (extractedId) {
+      setRaceId(extractedId);
+    } else {
+      // IDが抽出できなければ状態をクリアするなど必要に応じて
+      setRaceId('');
+    }
+  };
+  const handleFetchRace = async () => {
     setStatus('loading');
-    setResults([]);
+    const id = extractRaceId(input.trim());
+    if (id) {
+      setRaceId(id);
+      console.log('抽出された race_id:', id);
+      console.log(`[${raceId}] のスクレイピングを開始します...`);
+    } else {
+      alert('有効なレースIDまたはURLを入力してください。');
+    }
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    try {
+      const res = await fetch(`${baseUrl}/race/${id}`);
 
-    console.log(`[${raceId}] のスクレイピングを開始します...`);
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+      const data = await res.json();
+      console.log('Results:', data);
+      setResults(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('Fetch error:', err.message);
+      }
+      setStatus('error');
+      setResults(null);
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 2500));
     console.log('スクレイピングが完了しました。');
-
-    setResults(dummyResults);
     setStatus('success');
   };
 
@@ -81,17 +139,17 @@ export default function RaceAnalyzerPage() {
           <div className='flex items-center gap-4 mb-6 pb-6 border-b'>
             <input
               type='text'
-              value={raceId}
-              onChange={(e) => setRaceId(e.target.value)}
-              placeholder='レースIDを入力 (例: 202305050811)'
+              value={input}
+              onChange={handleChange}
+              placeholder='レースIDまたはURLを入力 (例: 202305050811)'
               className='flex-grow p-2 border rounded-md focus:ring-2 focus:ring-green focus:border-transparent disabled:bg-gray-200'
               disabled={status === 'loading'}
             />
             <button
-              onClick={handleExecute}
+              onClick={handleFetchRace}
               className='bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-600-dark transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed'
               // 「ローディング中」または「raceIdが空」の時にボタンを非活性化する
-              disabled={status === 'loading' || !raceId}
+              disabled={status === 'loading' || !input}
             >
               {status === 'loading' ? '実行中...' : '実行'}
             </button>
@@ -154,52 +212,85 @@ export default function RaceAnalyzerPage() {
                   </button>
                 </div>
               </div>
-              <div>
-                <h2 className='text-lg font-semibold mb-4 text-gray-700'>
-                  ▼ 分析結果テーブル (ソート可能)
+              {/* レース情報の表示 */}
+              <div className='mb-6 p-4 bg-gray-50 rounded-lg border'>
+                <h2 className='text-xl font-bold text-gray-800'>
+                  {results?.race_name}
                 </h2>
-                <div className='overflow-x-auto'>
-                  <table className='min-w-full bg-white border'>
-                    <thead className='bg-gray-200'>
-                      <tr>
-                        <th className='py-3 px-4 text-left font-semibold text-gray-600'>
-                          レコード種別
-                        </th>
-                        <th className='py-3 px-4 text-left font-semibold text-gray-600'>
-                          馬名
-                        </th>
-                        <th className='py-3 px-4 text-left font-semibold text-gray-600'>
-                          騎手/レース名
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {results.map((row, index) => (
-                        <tr key={index} className='border-b hover:bg-gray-50'>
-                          <td className='py-3 px-4'>
-                            <span
-                              className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                row.type === '出走情報'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-green-100 text-green-800'
-                              }`}
+                <p className='text-sm text-gray-600'>
+                  {results?.race_date} | {results?.venue} |{' '}
+                  {results?.course_details} | 馬場:{' '}
+                  {results?.ground_condition || '未発表'}
+                </p>
+              </div>
+
+              <div className='space-y-8'>
+                {' '}
+                {/* カード間のスペース */}
+                {results.entries.map((entry) => (
+                  <div
+                    key={entry.horse.horse_id}
+                    className='border rounded-lg shadow-md overflow-hidden'
+                  >
+                    {/* カードヘッダー：出走情報 */}
+                    <div className='bg-gray-100 p-4'>
+                      <h3 className='text-2xl font-bold text-gray-900'>
+                        {entry.horse.horse_name}
+                      </h3>
+                      <div className='flex items-center gap-4 text-sm text-gray-600 mt-1'>
+                        <span>騎手: {entry.jockey || '未定'}</span>
+                        <span>オッズ: {entry.odds}</span>
+                        <span>人気: {entry.popularity}番</span>
+                      </div>
+                    </div>
+
+                    {/* カードボディ：過去成績テーブル */}
+                    <div className='p-4'>
+                      <h4 className='text-md font-semibold mb-2 text-gray-700'>
+                        過去の成績
+                      </h4>
+                      <table className='min-w-full text-sm'>
+                        <thead className='bg-gray-50'>
+                          <tr>
+                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
+                              日付
+                            </th>
+                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
+                              レース名
+                            </th>
+                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
+                              コース
+                            </th>
+                            <th className='py-2 px-3 text-left font-medium text-gray-500'>
+                              着順
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {entry.horse.past_races.map((pastRace) => (
+                            <tr
+                              key={pastRace.past_race_id}
+                              className='border-t'
                             >
-                              {row.type}
-                            </span>
-                          </td>
-                          <td className='py-3 px-4 font-medium'>
-                            {row.horseName}
-                          </td>
-                          <td className='py-3 px-4'>
-                            {row.type === '出走情報'
-                              ? row.jockey
-                              : row.raceName}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                              <td className='py-2 px-3'>
+                                {pastRace.race_date}
+                              </td>
+                              <td className='py-2 px-3'>
+                                {pastRace.race_name}
+                              </td>
+                              <td className='py-2 px-3'>
+                                {pastRace.course_details}
+                              </td>
+                              <td className='py-2 px-3 font-semibold'>
+                                {pastRace.rank}着
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
