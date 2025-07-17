@@ -12,8 +12,8 @@ export default function RaceAnalyzerPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [raceId, setRaceId] = useState('');
   const [results, setResults] = useState<RaceData | null>(null);
-  const [input, setInput] = useState('202510020811');
-  
+  const [input, setInput] = useState('');
+
   const [filters, setFilters] = useState<Filters>({
     venue: 'all',
     rank: 5,
@@ -56,13 +56,18 @@ export default function RaceAnalyzerPage() {
   const handleFetchRace = async () => {
     setStatus('loading');
     const id = extractRaceId(input.trim());
-    if (id) {
-      setRaceId(id);
-      console.log('抽出された race_id:', id);
-      console.log(`[${raceId}] のスクレイピングを開始します...`);
-    } else {
+
+    // id が無効だった場合の処理
+    if (!id) {
       alert('有効なレースIDまたはURLを入力してください。');
+      setStatus('idle'); 
+      return; 
     }
+
+    setRaceId(id);
+    console.log('抽出された race_id:', id);
+    console.log(`[${raceId}] のスクレイピングを開始します...`);
+
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     try {
       const res = await fetch(`${baseUrl}/race/${id}`);
@@ -81,7 +86,6 @@ export default function RaceAnalyzerPage() {
       setResults(null);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 2500));
     console.log('スクレイピングが完了しました。');
     setStatus('success');
   };
@@ -102,7 +106,7 @@ export default function RaceAnalyzerPage() {
             <div className='absolute inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center z-10 rounded-b-lg'>
               <FaSpinner className='animate-spin text-green text-5xl mb-4' />
               <p className='text-xl font-semibold text-gray-700'>
-                スクレイピング中だよ~🐎💨 5分くらい待ってね〜☕🌈
+                スクレイピング中だよ〜🐎💨 5分くらい待ってね〜☕🌈
               </p>
               {/* <p className='text-gray-500'>しばらくお待ちください</p> */}
             </div>

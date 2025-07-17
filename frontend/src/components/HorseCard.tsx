@@ -4,14 +4,16 @@ import React, { useMemo } from 'react';
 import type { HorseCardProps } from '@/types/types';
 
 const getRankClass = (rank: number | null) => {
+  const baseClasses =
+    'text-sm rounded-full inline-flex items-center justify-center px-2.5 py-0.5';
   if (typeof rank !== 'number' || rank === 0) return 'text-gray-700 bg-white ';
   switch (rank) {
     case 1:
-      return 'text-gray-700 font-extrabold bg-amber-300 rounded-full font-extrabold w-4 h-4 ';
+      return `${baseClasses} text-black font-extrabold bg-amber-300`;
     case 2:
-      return 'text-gray-700 font-bold bg-slate-300 rounded-full font-extrabold w-4 h-4';
+      return `${baseClasses} text-black font-extrabold bg-slate-300`;
     case 3:
-      return 'text-gray-700 font-bold bg-orange-300 rounded-full font-extrabold w-4 h-4';
+      return `${baseClasses} text-black font-extrabold bg-orange-400`;
     default:
       return 'text-gray-700 bg-white';
   }
@@ -62,7 +64,7 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
           {entry.horse.horse_name}
         </h3>
         <div className='flex items-center gap-4 text-sm text-gray-600 mt-1'>
-          <span>騎手: {entry.jockey || '未定'}</span>
+          <span>騎手: {entry?.jockey?.jockey_name || '未定'}</span>
           <span>オッズ: {entry.odds}</span>
           <span>人気: {entry.popularity}番</span>
         </div>
@@ -92,10 +94,16 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                   コース
                 </th>
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                  馬場
+                </th>
+                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   頭数
                 </th>
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   着順
+                </th>
+                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                  上り
                 </th>
                 <th className='py-3 px-4 text-right text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   オッズ
@@ -103,11 +111,9 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   人気
                 </th>
+
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   馬番
-                </th>
-                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
-                  馬場
                 </th>
                 <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   騎手名
@@ -139,16 +145,21 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900'>
                     {pastRace.distance}
                   </td>
-
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                    {pastRace.ground_condition}
+                  </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
                     {pastRace.head_count}
                   </td>
-                  <td
-                    className={`py-3 px-4 whitespace-nowrap text-sm text-center ${getRankClass(
-                      pastRace.rank
-                    )}`}
-                  >
-                    {pastRace.rank}
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center '>
+                    <span className={getRankClass(pastRace.rank)}>
+                      {pastRace.rank}
+                    </span>
+                  </td>
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                    <span className={getRankClass(pastRace.last_3f_rank)}>
+                      {pastRace.last_3f}
+                    </span>
                   </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-right'>
                     {pastRace.odds}
@@ -159,9 +170,7 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
                     {pastRace.umaban}
                   </td>
-                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
-                    {pastRace.ground_condition}
-                  </td>
+
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 '>
                     {pastRace.jockey_name}
                   </td>

@@ -21,6 +21,8 @@ export interface PastRace {
   distance: string;
   head_count: number | null; // 18
   rank: number | null; // 5
+  last_3f: number | null; // 5
+  last_3f_rank: number | null; // 5
   odds: number | null; // 10.5
   popularity: number | null; // 4
   umaban: number | null; // 10
@@ -33,10 +35,13 @@ export interface Horse {
   horse_name: string;
   past_races: PastRace[];
 }
-
+export interface Jockey {
+  jockey_id: string; // もしくは number
+  jockey_name: string;
+}
 export interface Entry {
   horse: Horse;
-  jockey: string | null;
+  jockey: Jockey | null;
   odds: number;
   popularity: number;
   umaban: number | null;

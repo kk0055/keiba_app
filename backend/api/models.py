@@ -137,7 +137,9 @@ class HorsePastRace(models.Model):
     passing = models.CharField("通過順", max_length=20, null=True, blank=True)
     pace = models.CharField("ペース", max_length=20, null=True, blank=True)
     last_3f = models.CharField("上がり3F", max_length=10, null=True, blank=True)
-    last_3f_rank = models.CharField("上がり3Fの順番", max_length=10, null=True, blank=True)
+    last_3f_rank = models.IntegerField(
+        "上がり3Fの順番", null=True, blank=True
+    )
     body_weight = models.CharField("馬体重", max_length=20, null=True, blank=True)
 
     class Meta:

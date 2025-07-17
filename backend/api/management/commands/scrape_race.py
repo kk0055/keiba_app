@@ -117,7 +117,9 @@ class NetkeibaRaceAnalyzer:
             if created:
                 print(f"{race_id} をDBに新規作成しました。")
             else:
-                print(f"{race_id} はすでにDBに存在します。スキップします。")
+                print(
+                    f"既存レース [{race_name}] ({race_id}) の情報を更新しました。"
+                )
 
             table = soup.find("table", class_=["Shutuba_Table", "RegHorse_Table"])
             if not table:
@@ -159,6 +161,12 @@ class NetkeibaRaceAnalyzer:
                 odds = cells[9].text.strip() if len(cells) > 9 else ""
                 popularity = cells[10].text.strip() if len(cells) > 10 else ""
 
+                weight_to_save = None
+                try:
+                    weight_to_save = float(weight_carried)
+                except (ValueError, TypeError):
+                    print(f"斤量が数値でないためスキップします: '{weight_carried}'")
+
                 data = {
                     "race_id": race_id,
                     "waku": waku,
@@ -167,7 +175,7 @@ class NetkeibaRaceAnalyzer:
                     "horse_id": horse_id,
                     "jockey_id": jockey_id,
                     "sex_age": sex_age,
-                    "weight_carried": weight_carried,
+                    "weight_carried": weight_to_save,
                     "jockey_name": jockey_name,
                     "trainer_name": trainer_name,
                     "horse_weight": horse_weight,
@@ -178,6 +186,10 @@ class NetkeibaRaceAnalyzer:
                 horse, created = Horse.objects.get_or_create(
                     horse_id=data["horse_id"],
                     defaults={"horse_name": data["horse_name"]},
+                )
+                Jockey.objects.get_or_create(
+                    jockey_id=jockey_id,
+                    defaults={"jockey_name": jockey_name},
                 )
 
                 entry, created = Entry.objects.get_or_create(

@@ -8,9 +8,7 @@ class HorsePastRaceSerializer(serializers.ModelSerializer):
         fields = [
             "past_race_id",
             "race_date",
-            "venue_round",
             "venue_name",
-            "venue_day",
             "race_name",
             "weather",
             "head_count",
@@ -29,6 +27,7 @@ class HorsePastRaceSerializer(serializers.ModelSerializer):
             "passing",
             "pace",
             "last_3f",
+            "last_3f_rank",
             "body_weight",
         ]
 
