@@ -2,21 +2,25 @@
   "builds": [
     {
       "src": "../backend/config/wsgi.py", 
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.9"
+      }
     },
     {
       "src": "package.json",
       "use": "@vercel/next"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "../backend/config/wsgi.py" 
+      "source": "/api/(.*)",
+      "destination": "/backend/config/wsgi.py" 
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/(.*)",
+      "destination": "/$1"
     }
   ]
 }
