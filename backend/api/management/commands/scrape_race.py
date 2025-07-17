@@ -13,6 +13,7 @@ import argparse
 import datetime
 from django.core.management.base import BaseCommand
 from datetime import datetime
+from selenium.common.exceptions import NoSuchElementException
 
 from api.models import Race, Horse, Jockey, Trainer, Entry, HorsePastRace
 
@@ -61,15 +62,17 @@ class NetkeibaRaceAnalyzer:
         try:
             self.driver.get(url)
             try:
-                error_box = self.driver.find_element(By.CLASS_NAME, "Race_Error_Box")
-                if error_box:
-                    print(
-                        "-> エラー: レース情報が見つかりませんでした。指定されたrace_idが正しいか確認してください。"
-                    )
-                    return []
-            except:
-                # エラーボックスがなければ正常なので、何もしない
-                pass
+                WebDriverWait(self.driver, 5).until(
+                      EC.presence_of_element_located((By.CLASS_NAME, "HorseList"))
+                  )
+                self.driver.find_element(By.CLASS_NAME, "HorseList")
+
+                print("HorseListが見つかりました。処理を続行します。")
+
+            except NoSuchElementException:
+                print("HorseListが見つかりませんでした。無効なページのため処理を終了します。")
+                return 
+
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, "table[class*='RaceTable']")
@@ -192,11 +195,11 @@ class NetkeibaRaceAnalyzer:
                     defaults={"jockey_name": jockey_name},
                 )
 
-                entry, created = Entry.objects.get_or_create(
+                entry, created = Entry.objects.update_or_create(
                     race_id=data["race_id"],
                     horse_id=data["horse_id"],
                     defaults={
-                        "jockey_id":data["jockey_id"],
+                        "jockey_id": data["jockey_id"],
                         "waku": to_int_or_none(data["waku"]),
                         "umaban": to_int_or_none(data["umaban"]),
                         "weight_carried": data["weight_carried"],

@@ -5,7 +5,7 @@ import { FaSpinner } from 'react-icons/fa';
 import type { RaceData, Filters } from '@/types/types';
 import { FilterControls } from '../components/FilterControls';
 import { HorseCard } from '../components/HorseCard';
-
+import Toast from '@/components/Toast'; 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function RaceAnalyzerPage() {
@@ -13,6 +13,7 @@ export default function RaceAnalyzerPage() {
   const [raceId, setRaceId] = useState('');
   const [results, setResults] = useState<RaceData | null>(null);
   const [input, setInput] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); 
 
   const [filters, setFilters] = useState<Filters>({
     venue: 'all',
@@ -21,16 +22,32 @@ export default function RaceAnalyzerPage() {
     weather: [],
     ground_condition: [],
     recentRaces: 10,
+    jockeyMatch: false
   });
 
+  /**
+   * フィルター状態を更新するメモ化されたコールバック。
+   * 子コンポーネントの不要な再レンダリングを防ぐためにuseCallbackを使用。
+   * @param newFilters 新しいフィルターオブジェクト
+   */
   const handleFilterChange = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
   }, []);
+
+  /**
+   * 全ての馬の過去レース情報をフラットな配列に変換してメモ化。
+   * resultsが変更されるまで再計算されないため、パフォーマンスが向上する。
+   */
   const allPastRaces = useMemo(() => {
     if (!results) return [];
     return results.entries.flatMap((entry) => entry.horse.past_races);
   }, [results]);
 
+  /**
+   * 様々な形式の文字列から12桁のrace_idを抽出するユーティリティ関数。
+   * @param {string} value - race_idを含む可能性のある入力文字列。
+   * @returns {string | null} 抽出された12桁のrace_id。見つからない場合はnull。
+   */
   const extractRaceId = (value: string): string | null => {
     const urlParamMatch = value.match(/race_id=(\d{12})/);
     if (urlParamMatch) return urlParamMatch[1];
@@ -43,6 +60,7 @@ export default function RaceAnalyzerPage() {
 
     return null;
   };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     setInput(inputValue);
@@ -53,31 +71,49 @@ export default function RaceAnalyzerPage() {
       setRaceId('');
     }
   };
+  const showJockeyFilter = useMemo(() => {
+    if (!results || !results.entries) return false;
+    // entriesの中に、jockeyがnullでないものが1つでもあればtrueを返す
+    return results.entries.some(
+      (entry) => entry.jockey !== null && entry.jockey !== undefined
+    );
+  }, [results]);
+  /**
+   * 入力された値からrace_idを抽出し、バックエンドAPIにレースデータの取得を要求する非同期関数。
+   * 処理の進行状況に応じて、コンポーネントの状態 (status) を更新する。
+   */
   const handleFetchRace = async () => {
-    setStatus('loading');
+    setErrorMessage(null); 
     const id = extractRaceId(input.trim());
-
-    // id が無効だった場合の処理
     if (!id) {
-      alert('有効なレースIDまたはURLを入力してください。');
-      setStatus('idle'); 
-      return; 
+      setErrorMessage(
+        'ヒヒーン！そのIDじゃゲートインできないよ！正しいIDかURLを教えてくれないと、走り出せないんだ！'
+      );
+      return;
     }
 
+    setStatus('loading');
     setRaceId(id);
-    console.log('抽出された race_id:', id);
-    console.log(`[${raceId}] のスクレイピングを開始します...`);
+    setResults(null); // 新しいリクエストの前に古い結果をクリアする
+    console.log(`[${id}] のスクレイピングを開始します...`); // 更新前のraceIdではなく、抽出したidを使う
 
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     try {
       const res = await fetch(`${baseUrl}/race/${id}`);
 
       if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
+        const errorData = await res.json().catch(() => null); 
+        const message =
+          errorData?.message ||
+          `ブルルッ…そのレース番号、どこを探しても見つからないなぁ…`;
+        setErrorMessage(message); 
+        throw new Error(message);
       }
       const data = await res.json();
       console.log('Results:', data);
       setResults(data);
+      setStatus('success');
+      console.log('スクレイピングが完了しました。');
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error('Fetch error:', err.message);
@@ -85,9 +121,6 @@ export default function RaceAnalyzerPage() {
       setStatus('error');
       setResults(null);
     }
-
-    console.log('スクレイピングが完了しました。');
-    setStatus('success');
   };
 
   return (
@@ -111,31 +144,42 @@ export default function RaceAnalyzerPage() {
               {/* <p className='text-gray-500'>しばらくお待ちください</p> */}
             </div>
           )}
-
+          <label
+            htmlFor='raceIdInput'
+            className='block text-xs sm:text-sm font-medium text-gray-700 mb-2'
+          >
+            netkeiba.comのレースIDかURLをゲートイン🏇！(例:202510020811)
+          </label>
           <div className='flex items-center gap-4 mb-6 pb-6 border-b'>
             <input
+              id='raceIdInput'
               type='text'
               value={input}
               onChange={handleChange}
-              placeholder='netkeiba.comのレースIDまたはURLを入力 (例: 202305050811)'
+              placeholder='勝ち馬を探そう！'
               className='flex-grow p-2 border rounded-md focus:ring-2 focus:ring-green focus:border-transparent disabled:bg-gray-200'
               disabled={status === 'loading'}
             />
             <button
               onClick={handleFetchRace}
               className='bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-600-dark transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed'
-              // 「ローディング中」または「raceIdが空」の時にボタンを非活性化する
+              // 「ローディング中」または「inputが空」の時にボタンを非活性化する
               disabled={status === 'loading' || !input}
             >
               {status === 'loading' ? '実行中...' : '実行'}
             </button>
           </div>
-
+          <Toast
+            show={!!errorMessage} // errorMessageが空文字列でなければtrue
+            message={errorMessage}
+            onClose={() => setErrorMessage('')} // 閉じるボタンでメッセージを空にする
+          />
           {status === 'success' && (
             <div className='animate-fade-in'>
               <FilterControls
                 allPastRaces={allPastRaces}
                 onFilterChange={handleFilterChange}
+                showJockeyFilter={showJockeyFilter}
               />
               {/* レース情報の表示 */}
               <div className='mb-6 p-4 bg-gray-50 rounded-lg border'>

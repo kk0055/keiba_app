@@ -10,6 +10,7 @@ export interface Filters {
   weather: string[];
   ground_condition: string[];
   recentRaces: number;
+  jockeyMatch: boolean;
 }
 
 export interface PastRace {
@@ -28,6 +29,7 @@ export interface PastRace {
   umaban: number | null; // 10
   ground_condition: string | null;
   jockey_name: string; // "横山 武史"
+  jockey_id: string; // "横山 武史"
 }
 
 export interface Horse {

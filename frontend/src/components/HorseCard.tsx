@@ -21,6 +21,7 @@ const getRankClass = (rank: number | null) => {
 
 export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
   const displayedPastRaces = useMemo(() => {
+    const currentJockey = entry.jockey;
     let filteredData = [...entry.horse.past_races].slice(
       0,
       filters.recentRaces
@@ -54,8 +55,13 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
         );
       });
     }
+    if (filters.jockeyMatch && currentJockey) {
+      filteredData = filteredData.filter(
+        (race) => race.jockey_id === currentJockey.jockey_id
+      );
+    }
     return filteredData;
-  }, [entry.horse.past_races, filters]);
+  }, [entry, filters]);
 
   return (
     <div className='border rounded-lg shadow-md overflow-hidden'>

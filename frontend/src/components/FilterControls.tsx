@@ -17,16 +17,19 @@ const INITIAL_FILTERS: Filters = {
   weather: [],
   ground_condition: [],
   recentRaces: MAX_RECENT_RACES,
+  jockeyMatch: false
 };
 
 interface FilterControlsProps {
   allPastRaces: PastRace[];
   onFilterChange: (filters: Filters) => void;
+  showJockeyFilter:boolean;
 }
 
 export const FilterControls: React.FC<FilterControlsProps> = ({
   allPastRaces,
   onFilterChange,
+  showJockeyFilter,
 }) => {
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
 
@@ -157,42 +160,60 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
           </div>
         </div>
         {/* <div className='space-y-6'> */}
-          <div>
-            <label className='font-medium text-gray-600 flex justify-between'>
-              直近のレース
-              <span className='font-bold text-green-600'>
-                {filters.recentRaces}件
-              </span>
+        <div>
+          <label className='font-medium text-gray-600 flex justify-between'>
+            直近のレース
+            <span className='font-bold text-green-600'>
+              {filters.recentRaces}件
+            </span>
+          </label>
+          <Slider
+            min={1}
+            max={MAX_RECENT_RACES}
+            value={filters.recentRaces}
+            onChange={(value) => handleSliderChange('recentRaces', value)}
+            className='mt-2 '
+            styles={{
+              track: { backgroundColor: '#16a34a' },
+              handle: { borderColor: '#16a34a' },
+            }}
+          />
+        </div>
+        <div>
+          <label className='font-medium text-gray-600 flex justify-between'>
+            着順
+            <span className='font-bold text-green-600'>
+              {filters.rank}着以内
+            </span>
+          </label>
+          <Slider
+            min={1}
+            max={MAX_RANK}
+            value={filters.rank}
+            onChange={(value) => handleSliderChange('rank', value)}
+            className='mt-2'
+            styles={{
+              track: { backgroundColor: '#16a34a' },
+              handle: { borderColor: '#16a34a' },
+            }}
+          />
+        </div>
+        {showJockeyFilter && (
+        <div>
+          <label className='font-medium text-gray-600'>同ジョッキー</label>
+          <div className='flex items-center gap-4 pt-2'>
+            <label>
+              <input
+                type='checkbox'
+                name='jockeyMatch'
+                checked={filters.jockeyMatch}
+                onChange={handleInputChange}
+                className='form-checkbox h-5 w-5 text-green-600 rounded'
+              />
             </label>
-            <Slider
-              min={1}
-              max={MAX_RECENT_RACES}
-              value={filters.recentRaces}
-              onChange={(value) => handleSliderChange('recentRaces', value)}
-              className='mt-2 '
-              styles={{
-                track: { backgroundColor: '#16a34a' },
-                handle: { borderColor: '#16a34a' },
-              }}
-            />
           </div>
-          <div>
-            <label className='font-medium text-gray-600 flex justify-between'>
-              着順
-              <span className='font-bold text-green-600'>
-                {filters.rank}着以内
-              </span>
-            </label>
-            <Slider
-              min={1}
-              max={MAX_RANK}
-              value={filters.rank}
-              onChange={(value) => handleSliderChange('rank', value)}
-              className='mt-2'
-              trackStyle={{ backgroundColor: '#16a34a' }}
-              handleStyle={{ borderColor: '#16a34a' }}
-            />
-          </div>
+        </div>
+        )}
         {/* </div> */}
         {/* <div className='flex items-center pt-2'>
           <label className='flex items-center gap-2'>
