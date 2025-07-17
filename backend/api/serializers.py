@@ -49,11 +49,10 @@ class JockeySerializer(serializers.ModelSerializer):
         fields = ["jockey_id", "jockey_name"]
 
 
-
 class EntrySerializer(serializers.ModelSerializer):
     horse = HorseSerializer()
     jockey = JockeySerializer()
-    
+    win_place_count = serializers.IntegerField(read_only=True, default=0)
     class Meta:
         model = Entry
         fields = [
@@ -64,6 +63,7 @@ class EntrySerializer(serializers.ModelSerializer):
             "popularity",
             "horse",
             "jockey",
+            "win_place_count",
         ]
 
 

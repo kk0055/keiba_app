@@ -98,7 +98,7 @@ class NetkeibaRaceAnalyzer:
             a_tag = dd.find("a")
             if not a_tag:
                 raise RuntimeError("開催日付のタグが見つかりません")
-              
+
             date_text = a_tag.contents[0].strip()
             year = race_id[:4]
             full_date = f"{year}年{date_text}"
@@ -255,6 +255,14 @@ class NetkeibaRaceAnalyzer:
                     venue_name = venue_raw
                     venue_day = None
 
+                last_3f_rank = None
+                class_list = cells[22].get('class', [])
+                for cls in class_list:
+                    if cls.startswith('rank_'):
+                        # 'rank_' の部分を取り除いて数字だけにする
+                        last_3f_rank = int(cls.replace("rank_", ""))
+                        break
+
                 result_data = {
                     "date": cells[0].text.strip(),
                     "venue_round": venue_round,
@@ -282,7 +290,7 @@ class NetkeibaRaceAnalyzer:
                     "last_3f": cells[22].text.strip(),
                     "body_weight": cells[23].text.strip(),
                 }
-                print(result_data)
+                # print(result_data)
                 Jockey.objects.update_or_create(
                     jockey_id=past_jockey_id,
                     defaults={"jockey_name": result_data["jockey_name"]},
@@ -304,7 +312,8 @@ class NetkeibaRaceAnalyzer:
                         "odds": to_float_or_none(result_data["odds"]),
                         "popularity": to_int_or_none(result_data["popularity"]),
                         "rank": to_int_or_none(result_data["rank"]),
-                        "jockey_id": past_jockey_id,                         "jockey_name": past_jockey_name, 
+                        "jockey_id": past_jockey_id,
+                        "jockey_name": past_jockey_name,
                         "weight_carried": result_data["weight_carried"],
                         "distance": result_data["distance"],
                         "ground_condition": result_data["ground_condition"],
@@ -313,6 +322,7 @@ class NetkeibaRaceAnalyzer:
                         "passing": result_data["passing"],
                         "pace": result_data["pace"],
                         "last_3f": result_data["last_3f"],
+                        "last_3f_rank": last_3f_rank,
                         "body_weight": result_data["body_weight"],
                     },
                 )
