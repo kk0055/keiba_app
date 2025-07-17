@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -77,17 +78,34 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE"),
+# DATABASES = {
+#     "default": {
+#         "ENGINE": os.getenv("DB_ENGINE"),
+#         "NAME": os.getenv("DB_NAME"),
+#         "USER": os.getenv("DB_USER"),
+#         "PASSWORD": os.getenv("DB_PASSWORD", ""),
+#         "HOST": os.getenv("DB_HOST"),
+#         "PORT": int(os.getenv("DB_PORT", 3306)),
+#     }
+# }
+
+DATABASES = {}
+
+# Vercel環境（本番環境）かどうかを判定し、Vercel Postgresに接続
+if os.getenv("VERCEL_ENV") == "production":
+    # Vercelが自動で設定したDATABASE_URL（またはPOSTGRES_URL）を読み込む
+    db_url = os.getenv("DATABASE_URL", os.getenv("POSTGRES_URL"))
+    DATABASES["default"] = dj_database_url.parse(db_url)
+else:
+
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.mysql",
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
         "PORT": int(os.getenv("DB_PORT", 3306)),
     }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
