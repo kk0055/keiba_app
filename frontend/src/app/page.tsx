@@ -99,7 +99,7 @@ export default function RaceAnalyzerPage() {
 
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     try {
-      const res = await fetch(`${baseUrl}/race/${id}`);
+      const res = await fetch(`${baseUrl}/race/${id}/`);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null); 
