@@ -13,14 +13,14 @@
       "use": "@vercel/next"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/backend/config/wsgi.py" 
+      "src": "/api/.*",
+      "dest": "backend/config/wsgi.py"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
