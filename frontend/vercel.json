@@ -1,0 +1,22 @@
+{
+  "builds": [
+    {
+      "src": "../backend/config/wsgi.py", 
+      "use": "@vercel/python"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "../backend/config/wsgi.py" 
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}
