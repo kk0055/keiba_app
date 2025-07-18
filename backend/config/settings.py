@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
 from dotenv import load_dotenv
 import os
 from pathlib import Path
@@ -96,7 +97,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
-            DATABASE_URL, conn_max_age=600, ssl_require=True 
+            DATABASE_URL, conn_max_age=600, ssl_require=True
         )
     }
 else:
@@ -154,6 +155,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [
+    "https://keiba-app-mu.vercel.app",
     "http://localhost:3000",  # Next.jsの開発サーバーのURL
 ]
 REST_FRAMEWORK = {
