@@ -29,8 +29,6 @@ SECRET_KEY = "django-insecure-gp%+=89d800mb^ats6ym+0lblr71343^@m^pv_yxpq$&y3^djf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", ".vercel.app"]
-
 
 # Application definition
 
@@ -76,40 +74,37 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.app"
 
 
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": os.getenv("DB_ENGINE"),
-#         "NAME": os.getenv("DB_NAME"),
-#         "USER": os.getenv("DB_USER"),
-#         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-#         "HOST": os.getenv("DB_HOST"),
-#         "PORT": int(os.getenv("DB_PORT", 3306)),
-#     }
-# }
-
-DATABASES = {}
-
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.parse(
-            DATABASE_URL, conn_max_age=600
-        )
-    }
-else:
-
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.mysql",
+DATABASES = {
+    "default": {
+        "ENGINE": os.getenv("DB_ENGINE"),
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "localhost"),
+        "HOST": os.getenv("DB_HOST"),
         "PORT": int(os.getenv("DB_PORT", 3306)),
     }
+}
+
+# DATABASES = {}
+
+# DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# if DATABASE_URL:
+#     DATABASES = {
+#         "default": dj_database_url.parse(
+#             DATABASE_URL, conn_max_age=600
+#         )
+#     }
+# else:
+
+#     DATABASES["default"] = {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": os.getenv("DB_NAME"),
+#         "USER": os.getenv("DB_USER"),
+#         "PASSWORD": os.getenv("DB_PASSWORD", ""),
+#         "HOST": os.getenv("DB_HOST", "localhost"),
+#         "PORT": int(os.getenv("DB_PORT", 3306)),
+#     }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -154,9 +149,11 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+ALLOWED_HOSTS = ["*", ".vercel.app"]
+
 CORS_ALLOWED_ORIGINS = [
-    "https://keiba-app-mu.vercel.app",
-    "http://localhost:3000",  # Next.jsの開発サーバーのURL
+    "http://localhost:3000",
+    "https://fresh-ads-shake.loca.lt/",
 ]
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),

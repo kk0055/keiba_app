@@ -37,14 +37,14 @@ class NetkeibaRaceAnalyzer:
     def __init__(self):
         options = webdriver.ChromeOptions()
 
-        options.binary_location = os.getenv(
-            "CHROME_BIN", "/usr/bin/chromium"
-        )  # Render用に設定
-        # Dockerfileで設定した CHROMEDRIVER 環境変数がここで使われます
-        chromedriver_path = os.getenv(
-            "CHROMEDRIVER", "/usr/lib/chromium/chromedriver"
-        )  # Render用に設定
-        service = Service(executable_path=chromedriver_path)
+        # options.binary_location = os.getenv(
+        #     "CHROME_BIN", "/usr/bin/chromium"
+        # )  # Render用に設定
+        # # Dockerfileで設定した CHROMEDRIVER 環境変数がここで使われます
+        # chromedriver_path = os.getenv(
+        #     "CHROMEDRIVER", "/usr/lib/chromium/chromedriver"
+        # )  # Render用に設定
+        # service = Service(executable_path=chromedriver_path)
         
         options.add_argument("--headless")  # ヘッドレスモード
         options.add_argument(

@@ -3,10 +3,6 @@ FROM python:3.11-slim
 # apt-get installが対話的に動作しないように設定
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ★★★ 修正点1: chromium-browser ではなく chromium を使用（ただし、slimイメージの制約を考慮） ★★★
-# ★★★ 修正点2: chromiumの依存関係を厳密に定義し、不要なパッケージを削除 ★★★
-# ★★★ 修正点3: apt-get update の後に apt-get install を実行し、キャッシュをクリアする ★★★
-
 RUN apt-get update && \
     apt-get install -y \
         # General build tools and Python development headers for C extensions

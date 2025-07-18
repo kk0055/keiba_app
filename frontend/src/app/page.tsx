@@ -164,7 +164,7 @@ export default function RaceAnalyzerPage() {
               onClick={handleFetchRace}
               className='bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-600-dark transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed'
               // 「ローディング中」または「inputが空」の時にボタンを非活性化する
-              disabled={status === 'loading' || !input}
+              disabled={status === 'loading' }
             >
               {status === 'loading' ? '実行中...' : '実行'}
             </button>
