@@ -35,6 +35,8 @@ class Command(BaseCommand):
 class NetkeibaRaceAnalyzer:
     def __init__(self):
         options = webdriver.ChromeOptions()
+
+        options.binary_location = os.getenv("CHROME_BIN", "/usr/bin/chromium")#Render用に設定
         options.add_argument("--headless")  # ヘッドレスモード
         options.add_argument('--window-size=1920,1080') # ヘッドレスモードで要素を正しく認識させるため
         options.add_argument("--no-sandbox")
@@ -49,7 +51,13 @@ class NetkeibaRaceAnalyzer:
             "prefs", {"profile.managed_default_content_settings.images": 2}
         )
         service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
+        self.driver = webdriver.Chrome(
+            service=service,
+            options=options,
+            executable_path=os.getenv(
+                "CHROMEDRIVER", "/usr/lib/chromium/chromedriver"
+            ),  # Render用に設定
+        )
         self.db_base_url = "https://db.netkeiba.com"
 
     def close(self):

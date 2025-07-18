@@ -1,34 +1,18 @@
-# ベースイメージを指定
-FROM node:14
+FROM python:3.11-slim
 
-# 必要なパッケージをインストール
 RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    --no-install-recommends
+      chromium \
+      chromium-driver \
+      fonts-ipafont-gothic \
+      --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Googleの公開鍵を追加
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROMEDRIVER=/usr/lib/chromium/chromedriver
 
-# Chromeのリポジトリを追加
-RUN sh -c 'echo "deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-
-# Google Chromeをインストール
-RUN apt-get update && apt-get install -y \
-    google-chrome-stable \
-    --no-install-recommends
-
-# node_modulesをインストール
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install
-
-# アプリケーションのソースコードをコピー
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-# 環境変数設定（必要に応じて）
-ENV CHROME_BIN=/usr/bin/google-chrome
-ENV CHROME_PATH=/usr/bin/google-chrome
-
-# アプリケーションを起動
-CMD ["yarn", "start"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
