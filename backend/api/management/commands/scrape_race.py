@@ -14,6 +14,7 @@ import datetime
 from django.core.management.base import BaseCommand
 from datetime import datetime
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.chrome.service import Service
 
 from api.models import Race, Horse, Jockey, Trainer, Entry, HorsePastRace
 
@@ -36,9 +37,19 @@ class NetkeibaRaceAnalyzer:
     def __init__(self):
         options = webdriver.ChromeOptions()
 
-        options.binary_location = os.getenv("CHROME_BIN", "/usr/bin/chromium")#Render用に設定
+        options.binary_location = os.getenv(
+            "CHROME_BIN", "/usr/bin/chromium"
+        )  # Render用に設定
+        # Dockerfileで設定した CHROMEDRIVER 環境変数がここで使われます
+        chromedriver_path = os.getenv(
+            "CHROMEDRIVER", "/usr/lib/chromium/chromedriver"
+        )  # Render用に設定
+        service = Service(executable_path=chromedriver_path)
+        
         options.add_argument("--headless")  # ヘッドレスモード
-        options.add_argument('--window-size=1920,1080') # ヘッドレスモードで要素を正しく認識させるため
+        options.add_argument(
+            "--window-size=1920,1080"
+        )  # ヘッドレスモードで要素を正しく認識させるため
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument(
@@ -54,9 +65,6 @@ class NetkeibaRaceAnalyzer:
         self.driver = webdriver.Chrome(
             service=service,
             options=options,
-            executable_path=os.getenv(
-                "CHROMEDRIVER", "/usr/lib/chromium/chromedriver"
-            ),  # Render用に設定
         )
         self.db_base_url = "https://db.netkeiba.com"
 
@@ -71,15 +79,17 @@ class NetkeibaRaceAnalyzer:
             self.driver.get(url)
             try:
                 WebDriverWait(self.driver, 5).until(
-                      EC.presence_of_element_located((By.CLASS_NAME, "HorseList"))
-                  )
+                    EC.presence_of_element_located((By.CLASS_NAME, "HorseList"))
+                )
                 self.driver.find_element(By.CLASS_NAME, "HorseList")
 
                 print("HorseListが見つかりました。処理を続行します。")
 
             except NoSuchElementException:
-                print("HorseListが見つかりませんでした。無効なページのため処理を終了します。")
-                return 
+                print(
+                    "HorseListが見つかりませんでした。無効なページのため処理を終了します。"
+                )
+                return
 
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located(
@@ -98,11 +108,11 @@ class NetkeibaRaceAnalyzer:
                 raise RuntimeError("RaceName または RaceData01 が取得できません")
             course_details = race_data01.find("span").get_text(strip=True)
             race_name = race_name_tag.text.strip()
-            race_num_span = soup.select_one('div.RaceList_Item01 > span.RaceNum')
+            race_num_span = soup.select_one("div.RaceList_Item01 > span.RaceNum")
             if race_num_span:
                 text_nodes = [t for t in race_num_span.contents if isinstance(t, str)]
-                race_text = ''.join(text_nodes).strip()  # '11R'
-                number_match = re.search(r'\d+', race_text)
+                race_text = "".join(text_nodes).strip()  # '11R'
+                number_match = re.search(r"\d+", race_text)
                 if number_match:
                     race_number = number_match.group()
             dd = soup.find("dd", class_="Active")
@@ -128,9 +138,7 @@ class NetkeibaRaceAnalyzer:
             if created:
                 print(f"{race_id} をDBに新規作成しました。")
             else:
-                print(
-                    f"既存レース [{race_name}] ({race_id}) の情報を更新しました。"
-                )
+                print(f"既存レース [{race_name}] ({race_id}) の情報を更新しました。")
 
             table = soup.find("table", class_=["Shutuba_Table", "RegHorse_Table"])
             if not table:
@@ -249,19 +257,25 @@ class NetkeibaRaceAnalyzer:
                 past_jockey_cell = cells[12]
                 past_jockey_link = past_jockey_cell.find("a")
 
-                if past_jockey_link and past_jockey_link.has_attr('href'):
+                if past_jockey_link and past_jockey_link.has_attr("href"):
                     # 過去レースの騎手名とIDをリンクから取得
                     past_jockey_name = past_jockey_link.text.strip()
-                    past_jockey_id_match = re.search(r'/jockey/result/recent/(\d+)', past_jockey_link['href'])
-                    past_jockey_id = past_jockey_id_match.group(1) if past_jockey_id_match else None
+                    past_jockey_id_match = re.search(
+                        r"/jockey/result/recent/(\d+)", past_jockey_link["href"]
+                    )
+                    past_jockey_id = (
+                        past_jockey_id_match.group(1) if past_jockey_id_match else None
+                    )
                 else:
                     # リンクがない場合（地方騎手など）は、名前のみ取得しIDはNoneとする
                     past_jockey_name = past_jockey_cell.text.strip()
                     past_jockey_id = None
 
                 if not past_jockey_id:
-                    print(f"  -> 騎手IDが取得できませんでした。スキップします。(騎手名: {past_jockey_name})")
-                    continue  
+                    print(
+                        f"  -> 騎手IDが取得できませんでした。スキップします。(騎手名: {past_jockey_name})"
+                    )
+                    continue
 
                 race_link = cells[4].find("a")
                 past_race_id_match = (
@@ -270,18 +284,18 @@ class NetkeibaRaceAnalyzer:
                 venue_raw = cells[1].text.strip()
                 match = re.match(r"(\d+)([^\d]+)(\d+)", venue_raw)
                 if match:
-                    venue_round = int(match.group(1))       # 開催回（例: 3）
-                    venue_name = match.group(2)             # 開催地（例: 阪神）
-                    venue_day = int(match.group(3))         # 日目（例: 1）
+                    venue_round = int(match.group(1))  # 開催回（例: 3）
+                    venue_name = match.group(2)  # 開催地（例: 阪神）
+                    venue_day = int(match.group(3))  # 日目（例: 1）
                 else:
                     venue_round = None
                     venue_name = venue_raw
                     venue_day = None
 
                 last_3f_rank = None
-                class_list = cells[22].get('class', [])
+                class_list = cells[22].get("class", [])
                 for cls in class_list:
-                    if cls.startswith('rank_'):
+                    if cls.startswith("rank_"):
                         # 'rank_' の部分を取り除いて数字だけにする
                         last_3f_rank = int(cls.replace("rank_", ""))
                         break
