@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from dotenv import load_dotenv
 import os
 from pathlib import Path
-import dj_database_url
+# import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -73,17 +73,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.app"
 
-
+# Local環境
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv("DB_ENGINE"),
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.mysql"),
+        "NAME": os.getenv("DB_NAME", "keiba_app"),
+        "USER": os.getenv("DB_USER", "root"),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST"),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
         "PORT": int(os.getenv("DB_PORT", 3306)),
     }
 }
+# Docker
+# DATABASES = {
+#     "default": {
+#         "ENGINE": os.getenv("DB_ENGINE"),
+#         "NAME": os.getenv("MYSQL_DATABASE", "keiba_app"),
+#         "USER": os.getenv("MYSQL_USER", "root"),
+#         "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
+#         "HOST": os.getenv("DB_HOST", "db"),
+#         "PORT": int(os.getenv("DB_PORT", 3306)),
+#     }
+# }
 
 # DATABASES = {}
 
