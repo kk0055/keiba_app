@@ -18,6 +18,7 @@ export interface PastRace {
   race_date: string;
   venue_name: string;
   race_name: string;
+  race_grade_score: number | null;
   weather: string;
   distance: string;
   head_count: number | null; // 18
@@ -29,7 +30,7 @@ export interface PastRace {
   umaban: number | null; // 10
   ground_condition: string | null;
   jockey_name: string; // "横山 武史"
-  jockey_id: string; // "横山 武史"
+  jockey_id: string;
 }
 
 export interface Horse {
@@ -38,7 +39,7 @@ export interface Horse {
   past_races: PastRace[];
 }
 export interface Jockey {
-  jockey_id: string; // もしくは number
+  jockey_id: string; 
   jockey_name: string;
 }
 export interface Entry {
@@ -49,6 +50,7 @@ export interface Entry {
   umaban: number | null;
   waku: number | null;
   weight_carried: number;
+  horse_past_race_grade_score_total: number | null;
 }
 
 export interface RaceData {

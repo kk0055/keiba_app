@@ -73,6 +73,7 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
           <span>騎手: {entry?.jockey?.jockey_name || '未定'}</span>
           <span>オッズ: {entry.odds}</span>
           <span>人気: {entry.popularity}番</span>
+          <span>レースレベルスコア: {entry.horse_past_race_grade_score_total}</span>
         </div>
       </div>
       <div className='p-4'>
@@ -89,6 +90,9 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                 </th>
                 <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider w-32'>
                   レース名
+                </th>
+                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                  レース格
                 </th>
                 <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   開催地
@@ -141,7 +145,9 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                       {pastRace.race_name}
                     </div>
                   </td>
-
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                    {pastRace.race_grade_score}
+                  </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900'>
                     {pastRace.venue_name}
                   </td>

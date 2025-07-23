@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from .scraping import scrape_and_save_race
 from django.db.models import Prefetch
 from .models import Race, Entry
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 
 
 class RaceDetailView(APIView):
@@ -48,11 +48,15 @@ class RaceDetailView(APIView):
             .annotate(
                 # 'win_place_count'という新しいフィールドを各Entryに追加
                 # filter引数で条件に合うものだけをカウントする
-                win_place_count=Count("horse__past_races", filter=win_place_condition)
+                win_place_count=Count("horse__past_races", filter=win_place_condition),
+                sum_grade_score=Sum(
+                    "horse__past_races__race_grade_score"
+                ), 
             )
             .order_by(
                 # win_place_countが多い順（降順）に並べ替え
-                "-win_place_count"
+                "-win_place_count",
+                # "-sum_grade_score",
             )
         )
 

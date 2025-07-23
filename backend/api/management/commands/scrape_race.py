@@ -45,7 +45,7 @@ class NetkeibaRaceAnalyzer:
         #     "CHROMEDRIVER", "/usr/lib/chromium/chromedriver"
         # )  # Render用に設定
         # service = Service(executable_path=chromedriver_path)
-        
+
         options.add_argument("--headless")  # ヘッドレスモード
         options.add_argument(
             "--window-size=1920,1080"
@@ -342,6 +342,9 @@ class NetkeibaRaceAnalyzer:
                         "venue_name": result_data["venue_name"],
                         "venue_day": result_data["venue_day"],
                         "race_name": result_data["race_name"],
+                        "race_grade_score": get_race_grade_score(
+                            result_data["race_name"]
+                        ),
                         "weather": result_data["weather"],
                         "head_count": to_int_or_none(result_data["head_count"]),
                         "waku": to_int_or_none(result_data["waku"]),
@@ -368,6 +371,36 @@ class NetkeibaRaceAnalyzer:
             print(f"  -> 馬の成績取得エラー (ID: {horse_id}): {e}")
             return []
 
+def get_race_grade_score(race_name: str) -> int:
+    """
+    レース名に含まれるグレード文字列から、対応するスコアを返す関数。
+    """
+    # GI と JpnI は同等の価値として扱う
+    if re.search(r"\(GI\)|\(JpnI\)", race_name, re.IGNORECASE):
+        return 100
+    # GII と JpnII は同等の価値として扱う
+    elif re.search(r"\(GII\)|\(JpnII\)", race_name, re.IGNORECASE):
+        return 80
+    # GIII と JpnIII は同等の価値として扱う
+    elif re.search(r"\(GIII\)|\(JpnIII\)", race_name, re.IGNORECASE):
+        return 60
+    elif re.search(r"\(L\)", race_name, re.IGNORECASE):
+        return 50
+    # オープン特別 (OP)
+    elif re.search(r"\(OP\)", race_name, re.IGNORECASE):
+        return 40
+    # 条件戦
+    elif "3勝クラス" in race_name:
+        return 30
+    elif "2勝クラス" in race_name:
+        return 20
+    elif "1勝クラス" in race_name:
+        return 10
+    # 新馬・未勝利戦
+    elif "新馬" in race_name or "未勝利" in race_name:
+        return 5
+    else:
+        return 0  # 該当しない場合は0
 
 def to_int_or_none(value):
     try:

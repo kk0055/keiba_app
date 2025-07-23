@@ -120,6 +120,9 @@ class HorsePastRace(models.Model):
     venue_name = models.CharField("開催地", max_length=20, null=True, blank=True)
     venue_day = models.CharField("開催日目", max_length=20 ,null=True, blank=True)
     race_name = models.CharField("レース名", max_length=100)
+    race_grade_score = models.IntegerField(
+        "レースグレードごとの点数", null=True, blank=True
+    )
     weather = models.CharField("天気", max_length=10, null=True, blank=True)
     head_count = models.IntegerField("頭数", null=True, blank=True)
     waku = models.IntegerField("枠番", null=True, blank=True)
