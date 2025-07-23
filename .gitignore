@@ -21,6 +21,7 @@ backend/api/management/__pycache__/
 backend/api/management/commands/__pycache__/
 backend/api/migrations/__pycache__/
 backend/config/__pycache__/
+backend/output
 
 ### Node.js / Next.js ###
 # 依存パッケージ

@@ -42,16 +42,13 @@ class RaceDetailView(APIView):
             Entry.objects.filter(race=race)
             .select_related("jockey", "horse")
             .prefetch_related(
-                # prefetch_relatedは引き続き有効（各馬の全過去レースデータを取得するため）
                 "horse__past_races"
             )
             .annotate(
                 # 'win_place_count'という新しいフィールドを各Entryに追加
                 # filter引数で条件に合うものだけをカウントする
                 win_place_count=Count("horse__past_races", filter=win_place_condition),
-                sum_grade_score=Sum(
-                    "horse__past_races__race_grade_score"
-                ), 
+                sum_grade_score=Sum("horse__past_races__race_grade_score"),
             )
             .order_by(
                 # win_place_countが多い順（降順）に並べ替え

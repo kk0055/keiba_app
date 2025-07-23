@@ -73,7 +73,7 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
           <span>騎手: {entry?.jockey?.jockey_name || '未定'}</span>
           <span>オッズ: {entry.odds}</span>
           <span>人気: {entry.popularity}番</span>
-          <span>レースレベルスコア: {entry.horse_past_race_grade_score_total}</span>
+          <span>レース格合計: {entry.horse_past_race_grade_score_total}</span>
         </div>
       </div>
       <div className='p-4'>
