@@ -26,11 +26,30 @@ class Command(BaseCommand):
         parser.add_argument(
             "race_id", type=str, help="取得したいレースID（例: 202406030811）"
         )
+        parser.add_argument(
+            "--entry-only",
+            action="store_true",
+            help="エントリー情報のみをスクレイピングします。",
+        )
 
     def handle(self, *args, **options):
         race_id = options["race_id"]
-        # main関数を呼び出す（race_id を引数として渡す）
-        main(race_id)
+        entry_only = options["entry_only"]
+        main(race_id, entry_only)
+
+
+def main(race_id: str, entry_only=False):
+    analyzer = None
+    try:
+        analyzer = NetkeibaRaceAnalyzer()
+        analyzer.get_race_entry(race_id, entry_only)
+
+        print("\n=== 処理完了 ===")
+    except Exception as e:
+        print(f"予期せぬエラーが発生しました: {e}")
+    finally:
+        if analyzer:
+            analyzer.close()
 
 
 class NetkeibaRaceAnalyzer:
@@ -63,7 +82,7 @@ class NetkeibaRaceAnalyzer:
         if self.driver:
             self.driver.quit()
 
-    def get_race_entry(self, race_id):
+    def get_race_entry(self, race_id, entry_only):
         url = f"https://race.netkeiba.com/race/shutuba.html?race_id={race_id}"
         print(f"出馬表URLにアクセス: {url}")
         try:
@@ -214,8 +233,8 @@ class NetkeibaRaceAnalyzer:
                         "popularity": to_int_or_none(data["popularity"]),
                     },
                 )
-
-                self.get_past_races(horse)
+                if not entry_only:
+                    self.get_past_races(horse)
 
         except Exception as e:
             print(f"出馬表取得中にエラー: {e}")
@@ -412,17 +431,3 @@ def parse_date(value):
         return datetime.strptime(value, "%Y/%m/%d").date()
     except:
         return None
-
-
-def main(race_id: str):
-    analyzer = None
-    try:
-        analyzer = NetkeibaRaceAnalyzer()
-        analyzer.get_race_entry(race_id)
-
-        print("\n=== 処理完了 ===")
-    except Exception as e:
-        print(f"予期せぬエラーが発生しました: {e}")
-    finally:
-        if analyzer:
-            analyzer.close()

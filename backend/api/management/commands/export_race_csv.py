@@ -58,11 +58,11 @@ class Command(BaseCommand):
             "馬番",
             "枠番",
             "馬名",
-            "性齢",
+            # "性齢",
             "今回の斤量",
             "今回の騎手",
-            "調教師",
-            "馬体重(増減)",
+            # "調教師",
+            # "馬体重(増減)",
             "オッズ",
             "日付",
             "開催",
@@ -152,38 +152,38 @@ class Command(BaseCommand):
                             # past_race自体がNoneの可能性をチェックし、スキップする
                             if not past_race:
                                 continue 
-                        past_race_row = [
-                            "過去成績",
-                            entry.get("umaban", ""),
-                            "",
-                            horse_data.get("horse_name", ""),
-                            "",
-                            "",
-                            "",
-                            "",
-                            "",
-                            "",  # 出走情報用のカラムは空欄
-                            past_race.get("race_date", ""),
-                            past_race.get("venue_name", ""),
-                            past_race.get("weather", ""),
-                            past_race.get("race_name", ""),
-                            past_race.get("head_count", ""),
-                            past_race.get("umaban", ""),  # 過去のレースの馬番
-                            past_race.get("waku", ""),  # 過去のレースの枠番
-                            past_race.get("odds", ""),  # 過去のレースのオッズ
-                            past_race.get("rank", ""),
-                            past_race.get("jockey_name", ""),
-                            past_race.get("weight_carried", ""),
-                            past_race.get("distance", ""),
-                            past_race.get("ground_condition", ""),
-                            past_race.get("time", ""),
-                            past_race.get("margin", ""),
-                            past_race.get("passing", ""),
-                            past_race.get("pace", ""),
-                            past_race.get("last_3f", ""),
-                            past_race.get("body_weight", ""),
-                        ]
-                        writer.writerow(past_race_row)
+                            past_race_row = [
+                                "過去成績",
+                                entry.get("umaban", ""),
+                                "",
+                                horse_data.get("horse_name", ""),
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",  # 出走情報用のカラムは空欄
+                                past_race.get("race_date", ""),
+                                past_race.get("venue_name", ""),
+                                past_race.get("weather", ""),
+                                past_race.get("race_name", ""),
+                                past_race.get("head_count", ""),
+                                past_race.get("umaban", ""),  # 過去のレースの馬番
+                                past_race.get("waku", ""),  # 過去のレースの枠番
+                                past_race.get("odds", ""),  # 過去のレースのオッズ
+                                past_race.get("rank", ""),
+                                past_race.get("jockey_name", ""),
+                                past_race.get("weight_carried", ""),
+                                past_race.get("distance", ""),
+                                past_race.get("ground_condition", ""),
+                                past_race.get("time", ""),
+                                past_race.get("margin", ""),
+                                past_race.get("passing", ""),
+                                past_race.get("pace", ""),
+                                past_race.get("last_3f", ""),
+                                past_race.get("body_weight", ""),
+                            ]
+                            writer.writerow(past_race_row)
 
                     # --- 区切り行を書き込む ---
                     # ヘッダーの数に合わせて空の要素を追加
