@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Race, Entry, Horse, Jockey, HorsePastRace
+from .models import Race, Entry, Horse, Jockey, HorsePastRace, AIPrediction
 from django.db.models import Sum
 
 class HorsePastRaceSerializer(serializers.ModelSerializer):
@@ -91,4 +91,70 @@ class RaceSerializer(serializers.ModelSerializer):
             "course_details",
             "ground_condition",
             "entries",
+        ]
+
+
+class SimpleRaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Race
+        fields = ["id", "race_name", "date"]
+
+
+# class EntryReadSerializer(serializers.ModelSerializer):
+#     """読み込み時に馬名や騎手名を表示するためのシリアライザ"""
+
+#     horse = HorseSerializer(read_only=True)
+#     jockey = JockeySerializer(read_only=True)
+
+#     class Meta:
+#         model = Entry
+#         fields = ["id", "horse_number", "horse", "jockey"]
+
+
+class AIPredictionReadSerializer(serializers.ModelSerializer):
+    """GETリクエスト（読み込み）用のシリアライザ"""
+
+    race = SimpleRaceSerializer(read_only=True)
+    # predicted_first = EntryReadSerializer(read_only=True)
+    # predicted_second = EntryReadSerializer(read_only=True)
+    # predicted_third = EntryReadSerializer(read_only=True)
+
+    class Meta:
+        model = AIPrediction
+        fields = [
+            "id",
+            "race",
+            "prediction_model_name",
+            # "predicted_first",
+            # "predicted_second",
+            # "predicted_third",
+            "notes",
+            "created_at",
+        ]
+
+
+class AIPredictionWriteSerializer(serializers.ModelSerializer):
+    """POST, PUT, PATCHリクエスト（書き込み）用のシリアライザ"""
+
+    # 関連モデルはIDで指定する
+    race = serializers.PrimaryKeyRelatedField(queryset=Race.objects.all())
+    # predicted_first = serializers.PrimaryKeyRelatedField(
+    #     queryset=Entry.objects.all(), allow_null=True
+    # )
+    # predicted_second = serializers.PrimaryKeyRelatedField(
+    #     queryset=Entry.objects.all(), allow_null=True
+    # )
+    # predicted_third = serializers.PrimaryKeyRelatedField(
+    #     queryset=Entry.objects.all(), allow_null=True
+    # )
+
+    class Meta:
+        model = AIPrediction
+        fields = [
+            "race",
+            "prediction_model_name",
+            # "predicted_first",
+            # "predicted_second",
+            # "predicted_third",
+            "notes",
         ]

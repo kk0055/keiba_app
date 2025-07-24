@@ -1,13 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RaceSerializer, EntrySerializer
+from .serializers import RaceSerializer, EntrySerializer,AIPredictionReadSerializer, AIPredictionWriteSerializer
 from django.shortcuts import get_object_or_404
 from .scraping import scrape_and_save_race
-from django.db.models import Prefetch
-from .models import Race, Entry
+from .models import Race, Entry, AIPrediction
 from django.db.models import Count, Q, Sum
-
+from rest_framework import viewsets, permissions
+from django_filters.rest_framework import DjangoFilterBackend
 
 class RaceDetailView(APIView):
     """
@@ -67,3 +67,28 @@ class RaceDetailView(APIView):
         response_data["entries"] = entry_serializer.data
 
         return Response(response_data)
+
+
+class AIPredictionViewSet(viewsets.ModelViewSet):
+    """
+    AI予想のCRUD操作を行うAPIビュー
+    """
+
+    queryset = AIPrediction.objects.select_related(
+        "race",
+        # "predicted_first__horse",
+        # "predicted_first__jockey",
+        # "predicted_second__horse",
+        # "predicted_second__jockey",
+        # "predicted_third__horse",
+        # "predicted_third__jockey",
+    ).all()
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["race"]
+
+    def get_serializer_class(self):
+        """アクションに応じてシリアライザを切り替える"""
+        if self.action in ["create", "update", "partial_update"]:
+            return AIPredictionWriteSerializer
+        return AIPredictionReadSerializer

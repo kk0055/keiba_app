@@ -97,8 +97,8 @@ class Command(BaseCommand):
 
                     # entry自体がNoneでないかチェック
                     if not entry:
-                        self.stdout.write(self.style.WARNING(f"Entry #{i+1} is None or empty. Skipping."))
                         continue
+                      
                     horse_data = entry.get("horse") or {}
                     jockey_data = entry.get('jockey') or {} 
 

@@ -153,3 +153,50 @@ class HorsePastRace(models.Model):
 
     def __str__(self):
         return f"{self.horse.horse_name} - {self.race_date} {self.race_name}"
+
+
+class AIPrediction(models.Model):
+    """AI予想"""
+
+    race = models.ForeignKey(Race, on_delete=models.CASCADE, verbose_name="対象レース")
+    prediction_model_name = models.CharField(
+        "AIモデル名", max_length=100, default="main_v1"
+    )  
+    # predicted_first = models.ForeignKey(
+    #     Entry,
+    #     on_delete=models.CASCADE,
+    #     related_name="predicted_as_first",
+    #     verbose_name="1着予想",
+    #     null=True,  
+    #     blank=True, 
+    # )
+    # predicted_second = models.ForeignKey(
+    #     Entry,
+    #     on_delete=models.CASCADE,
+    #     related_name="predicted_as_second",
+    #     verbose_name="2着予想",
+    #     null=True,
+    #     blank=True,
+    # )
+    # predicted_third = models.ForeignKey(
+    #     Entry,
+    #     on_delete=models.CASCADE,
+    #     related_name="predicted_as_third",
+    #     verbose_name="3着予想",
+    #     null=True,
+    #     blank=True,
+    # )
+
+    notes = models.TextField("メモ・見解", blank=True)
+    created_at = models.DateTimeField("作成日時", auto_now_add=True)
+
+    class Meta:
+        unique_together = (
+            "race",
+            "prediction_model_name",
+        )  # 1つのレースに同じAIモデルの予想は1つだけ
+        verbose_name = "AI予想"
+        verbose_name_plural = "AI予想"
+
+    def __str__(self):
+        return f"AI予想: {self.race} ({self.prediction_model_name})"
