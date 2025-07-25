@@ -6,14 +6,29 @@ import type { RaceData, Filters } from '@/types/types';
 import { FilterControls } from '../components/FilterControls';
 import { HorseCard } from '../components/HorseCard';
 import Toast from '@/components/Toast'; 
+import useSWR, { mutate } from 'swr';
+import { getPredictionByRaceId } from '@/lib/api';
+import PredictionForm from '@/components/PredictionForm';
+
 type Status = 'idle' | 'loading' | 'success' | 'error';
+
+
 
 export default function RaceAnalyzerPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [raceId, setRaceId] = useState('');
   const [results, setResults] = useState<RaceData | null>(null);
   const [input, setInput] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); 
+
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string | null;
+    type: 'success' | 'error';
+  }>({
+    show: false,
+    message: '',
+    type: 'success',
+  });
 
   const [filters, setFilters] = useState<Filters>({
     venue: 'all',
@@ -22,8 +37,28 @@ export default function RaceAnalyzerPage() {
     weather: [],
     ground_condition: [],
     recentRaces: 10,
-    jockeyMatch: false
+    jockeyMatch: false,
   });
+
+  const {
+    data: prediction,
+  } = useSWR(
+    raceId ? `/predictions/?race=${raceId}` : null, 
+    () => getPredictionByRaceId(raceId)
+  );
+
+  const handleSuccess = () => {
+    mutate(`/predictions/?race=${raceId}`);
+    setToast({
+      show: true,
+      message: '保存!',
+      type: 'success',
+    });
+  };
+
+  const handleCloseToast = () => {
+    setToast({ ...toast, show: false });
+  };
 
   /**
    * フィルター状態を更新するメモ化されたコールバック。
@@ -78,17 +113,25 @@ export default function RaceAnalyzerPage() {
       (entry) => entry.jockey !== null && entry.jockey !== undefined
     );
   }, [results]);
+
   /**
    * 入力された値からrace_idを抽出し、バックエンドAPIにレースデータの取得を要求する非同期関数。
    * 処理の進行状況に応じて、コンポーネントの状態 (status) を更新する。
    */
   const handleFetchRace = async () => {
-    setErrorMessage(null); 
+    setToast({
+      show: false,
+      message: '',
+      type: 'success',
+    });
     const id = extractRaceId(input.trim());
     if (!id) {
-      setErrorMessage(
-        'ヒヒーン！そのIDじゃゲートインできないよ！正しいIDかURLを教えてくれないと、走り出せないんだ！'
-      );
+      setToast({
+        show: true,
+        message:
+          'ヒヒーン！そのIDじゃゲートインできないよ！正しいIDかURLを教えてくれないと、走り出せないんだ！',
+        type: 'error',
+      });
       return;
     }
 
@@ -96,17 +139,21 @@ export default function RaceAnalyzerPage() {
     setRaceId(id);
     setResults(null); // 新しいリクエストの前に古い結果をクリアする
     console.log(`[${id}] のスクレイピングを開始します...`); // 更新前のraceIdではなく、抽出したidを使う
-
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     try {
       const res = await fetch(`${baseUrl}/race/${id}/`);
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => null); 
+        const errorData = await res.json().catch(() => null);
         const message =
           errorData?.message ||
           `ブルルッ…そのレース番号、どこを探しても見つからないなぁ…`;
-        setErrorMessage(message); 
+  
+        setToast({
+          show: true,
+          message: message,
+          type: 'error',
+        });
         throw new Error(message);
       }
       const data = await res.json();
@@ -164,15 +211,16 @@ export default function RaceAnalyzerPage() {
               onClick={handleFetchRace}
               className='bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-600-dark transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed'
               // 「ローディング中」または「inputが空」の時にボタンを非活性化する
-              disabled={status === 'loading' }
+              disabled={status === 'loading'}
             >
               {status === 'loading' ? '実行中...' : '実行'}
             </button>
           </div>
           <Toast
-            show={!!errorMessage} // errorMessageが空文字列でなければtrue
-            message={errorMessage}
-            onClose={() => setErrorMessage('')} // 閉じるボタンでメッセージを空にする
+            show={toast.show}
+            message={toast.message}
+            onClose={handleCloseToast}
+            type={toast.type}
           />
           {status === 'success' && (
             <div className='animate-fade-in'>
@@ -181,6 +229,13 @@ export default function RaceAnalyzerPage() {
                 onFilterChange={handleFilterChange}
                 showJockeyFilter={showJockeyFilter}
               />
+              <div>
+                <PredictionForm
+                  raceId={raceId}
+                  editingPrediction={prediction || null}
+                  onSuccess={handleSuccess}
+                />
+              </div>
               {/* レース情報の表示 */}
               <div className='mb-6 p-4 bg-gray-50 rounded-lg border'>
                 <h2 className='text-xl font-bold text-gray-800'>

@@ -97,7 +97,7 @@ class RaceSerializer(serializers.ModelSerializer):
 class SimpleRaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Race
-        fields = ["id", "race_name", "date"]
+        fields = ["race_id", "race_name", "race_date"]
 
 
 # class EntryReadSerializer(serializers.ModelSerializer):
