@@ -98,7 +98,7 @@ class Command(BaseCommand):
                     # entry自体がNoneでないかチェック
                     if not entry:
                         continue
-                      
+
                     horse_data = entry.get("horse") or {}
                     jockey_data = entry.get('jockey') or {} 
 
@@ -189,6 +189,7 @@ class Command(BaseCommand):
                     # ヘッダーの数に合わせて空の要素を追加
                     writer.writerow(["---"] + [""] * (len(header) - 1))
 
+           
             self.stdout.write(
                 self.style.SUCCESS(f"正常に '{output_filename}' を出力しました。")
             )

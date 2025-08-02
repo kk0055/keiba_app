@@ -187,7 +187,11 @@ class NetkeibaRaceAnalyzer:
                 jockey_name = cells[6].text.strip() if len(cells) > 6 else ""
                 trainer_name = cells[7].text.strip() if len(cells) > 7 else ""
                 horse_weight = cells[8].text.strip() if len(cells) > 8 else ""
-                odds = cells[9].text.strip() if len(cells) > 9 else ""
+                raw_odds = cells[9].text.strip() if len(cells) > 9 else ""
+                try:
+                    odds = float(raw_odds)
+                except (ValueError, TypeError):
+                    odds = None 
                 popularity = cells[10].text.strip() if len(cells) > 10 else ""
 
                 weight_to_save = None
