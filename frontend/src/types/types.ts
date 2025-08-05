@@ -31,6 +31,7 @@ export interface PastRace {
   ground_condition: string | null;
   jockey_name: string; // "横山 武史"
   jockey_id: string;
+  time: string | null;
 }
 
 export interface Horse {

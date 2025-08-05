@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RaceSerializer, EntrySerializer,AIPredictionReadSerializer, AIPredictionWriteSerializer
 from django.shortcuts import get_object_or_404
-from .scraping import scrape_and_save_race
+from .call_command_utils import scrape_and_export_csv, export_race_csv
 from .models import Race, Entry, AIPrediction
 from django.db.models import Count, Q, Sum
 from rest_framework import viewsets, permissions
@@ -21,7 +21,7 @@ class RaceDetailView(APIView):
         if not race:
             # データがなければスクレイピングして登録
             try:
-                scrape_and_save_race(race_id)
+                scrape_and_export_csv(race_id)
             except Exception as e:
                 return Response(
                     {"error": f"データ取得に失敗しました: {str(e)}"},
@@ -65,7 +65,7 @@ class RaceDetailView(APIView):
         # レスポンスデータを構築
         response_data = race_serializer.data
         response_data["entries"] = entry_serializer.data
-
+        export_race_csv(race_id)
         return Response(response_data)
 
 

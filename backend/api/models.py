@@ -194,7 +194,7 @@ class AIPrediction(models.Model):
         unique_together = (
             "race",
             "prediction_model_name",
-        )  # 1つのレースに同じAIモデルの予想は1つだけ
+        )  
         verbose_name = "AI予想"
         verbose_name_plural = "AI予想"
 

@@ -314,6 +314,17 @@ class NetkeibaRaceAnalyzer:
                         last_3f_rank = int(cls.replace("rank_", ""))
                         break
 
+                # print(f"  >>> 取得した14: '{cells[14].text.strip()}'")
+                # print(f"  >>> 取得した15: '{cells[15].text.strip()}'")
+                # print(f"  >>> 取得した16: '{cells[16].text.strip()}'")
+                # print(f"  >>> 取得した17: '{cells[17].text.strip()}'")
+                # print(f"  >>> 取得した18: '{cells[18].text.strip()}'")
+                # print(f"  >>> 取得した19: '{cells[19].text.strip()}'")
+                # print(f"  >>> 取得した20: '{cells[20].text.strip()}'")
+                # print(f"  >>> 取得した21: '{cells[21].text.strip()}'")
+                # print(f"  >>> 取得した22: '{cells[22].text.strip()}'")
+                # print(f"  >>> 取得した23: '{cells[23].text.strip()}'")
+                # print(f"  >>> 取得した24: '{cells[24].text.strip()}'")
                 result_data = {
                     "date": cells[0].text.strip(),
                     "venue_round": venue_round,
@@ -333,13 +344,13 @@ class NetkeibaRaceAnalyzer:
                     "jockey_name": cells[12].text.strip(),
                     "weight_carried": cells[13].text.strip(),
                     "distance": cells[14].text.strip(),
-                    "ground_condition": cells[15].text.strip(),
-                    "time": cells[17].text.strip(),
-                    "margin": cells[18].text.strip(),
-                    "passing": cells[20].text.strip(),
-                    "pace": cells[21].text.strip(),
-                    "last_3f": cells[22].text.strip(),
-                    "body_weight": cells[23].text.strip(),
+                    "ground_condition": cells[16].text.strip(),
+                    "time": cells[18].text.strip(),
+                    "margin": cells[19].text.strip(),
+                    "passing": cells[21].text.strip(),
+                    "pace": cells[22].text.strip(),
+                    "last_3f": cells[23].text.strip(),
+                    "body_weight": cells[24].text.strip(),
                 }
                 # print(result_data)
                 Jockey.objects.update_or_create(

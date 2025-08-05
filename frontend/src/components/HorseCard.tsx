@@ -113,6 +113,9 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                   着順
                 </th>
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                  タイム
+                </th>
+                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   上り
                 </th>
                 <th className='py-3 px-4 text-right text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
@@ -167,6 +170,9 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                     <span className={getRankClass(pastRace.rank)}>
                       {pastRace.rank}
                     </span>
+                  </td>
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-right'>
+                    {pastRace.time}
                   </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
                     <span className={getRankClass(pastRace.last_3f_rank)}>
