@@ -244,7 +244,8 @@ export default function RaceAnalyzerPage() {
                 <p className='text-sm text-gray-600'>
                   {results?.race_date} | {results?.race_number}R |{' '}
                   {results?.venue} | {results?.course_details} | 馬場:{' '}
-                  {results?.ground_condition || '未発表'}
+                  {results?.ground_condition || '未発表'} |{' '}
+                  {results?.head_count} 頭
                 </p>
               </div>
               <div className='space-y-8'>

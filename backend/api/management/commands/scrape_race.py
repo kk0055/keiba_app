@@ -116,7 +116,38 @@ class NetkeibaRaceAnalyzer:
             venue = venue_spans[1].get_text(strip=True)
             if not (race_name_tag and race_data01):
                 raise RuntimeError("RaceName または RaceData01 が取得できません")
+
             course_details = race_data01.find("span").get_text(strip=True)
+
+            ground_condition = ""
+            all_spans_in_div = race_data01.find_all("span")
+            for span in all_spans_in_div:
+                # テキストに「馬場:」という文字列が含まれているかチェック
+                if "馬場:" in span.text:
+                    raw_text = span.text
+                    ground_condition = raw_text.split("馬場:")[1].strip()
+                    break
+
+                head_count = None  
+                race_data_div = soup.find('div', class_='RaceData02')
+
+                if race_data_div:
+                    all_spans = race_data_div.find_all('span')
+                    for span in all_spans:
+                        span_text = span.get_text(strip=True)
+                        # 4. テキストが「頭」で終わるか判定
+                        if span_text.endswith('頭'):
+                            # 5. 「頭」という文字を削除して、数字の部分だけを取り出す
+                            number_text = span_text.replace('頭', '')
+                            try:
+                                head_count = int(number_text)
+                                # 目的のデータが見つかったので、ループを終了する
+                                break
+                            except ValueError:
+                                # 数字に変換できなかった場合（例: '頭'だけだった場合）
+                                print(f"エラー: '{number_text}'を数値に変換できませんでした。")
+                                break
+
             race_name = race_name_tag.text.strip()
             race_num_span = soup.select_one("div.RaceList_Item01 > span.RaceNum")
             if race_num_span:
@@ -135,6 +166,7 @@ class NetkeibaRaceAnalyzer:
             full_date = f"{year}年{date_text}"
             race_date = datetime.strptime(full_date, "%Y年%m月%d日").date()
 
+            print(f"ground_condition: '{ground_condition}'")
             race, created = Race.objects.update_or_create(
                 race_id=race_id,
                 defaults={
@@ -142,6 +174,8 @@ class NetkeibaRaceAnalyzer:
                     "race_date": race_date,
                     "venue": venue,
                     "course_details": course_details,
+                    "ground_condition": ground_condition,
+                    "head_count": head_count,
                     "race_number": race_number,
                 },
             )

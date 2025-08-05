@@ -62,6 +62,7 @@ export interface RaceData {
   venue: string;
   course_details: string;
   ground_condition: string | null;
+  head_count: number | null;
   entries: Entry[];
 }
 

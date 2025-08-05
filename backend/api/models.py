@@ -13,6 +13,7 @@ class Race(models.Model):
     ground_condition = models.CharField(
         "馬場状態", max_length=20, null=True, blank=True
     )
+    head_count = models.IntegerField("頭数", null=True, blank=True)
     created_at = models.DateTimeField("登録日時", auto_now_add=True)
 
     class Meta:

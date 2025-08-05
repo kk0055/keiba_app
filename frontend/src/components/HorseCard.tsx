@@ -113,23 +113,23 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                   着順
                 </th>
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
-                  タイム
-                </th>
-                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   上り
                 </th>
-                <th className='py-3 px-4 text-right text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
-                  オッズ
-                </th>
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
-                  人気
+                  タイム
                 </th>
 
                 <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
-                  馬番
+                  人気
                 </th>
                 <th className='py-3 px-4 text-left text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
                   騎手名
+                </th>
+                <th className='py-3 px-4 text-center text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                  馬番
+                </th>
+                <th className='py-3 px-4 text-right text-xs font-medium whitespace-nowrap text-gray-500 uppercase tracking-wider'>
+                  オッズ
                 </th>
               </tr>
             </thead>
@@ -139,7 +139,6 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900'>
                     {pastRace.race_date}
                   </td>
-
                   <td
                     className='py-3 px-4 text-sm text-gray-900 font-medium '
                     title={pastRace.race_name}
@@ -171,26 +170,26 @@ export const HorseCard: React.FC<HorseCardProps> = ({ entry, filters }) => {
                       {pastRace.rank}
                     </span>
                   </td>
-                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-right'>
-                    {pastRace.time}
-                  </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
                     <span className={getRankClass(pastRace.last_3f_rank)}>
                       {pastRace.last_3f}
                     </span>
                   </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-right'>
-                    {pastRace.odds}
+                    {pastRace.time}
                   </td>
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
                     {pastRace.popularity}
                   </td>
-                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
-                    {pastRace.umaban}
-                  </td>
 
                   <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 '>
                     {pastRace.jockey_name}
+                  </td>
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-center'>
+                    {pastRace.umaban}
+                  </td>
+                  <td className='py-3 px-4 whitespace-nowrap text-sm text-gray-900 text-right'>
+                    {pastRace.odds}
                   </td>
                 </tr>
               ))}

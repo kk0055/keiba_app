@@ -90,6 +90,7 @@ class RaceSerializer(serializers.ModelSerializer):
             "venue",
             "course_details",
             "ground_condition",
+            "head_count",
             "entries",
         ]
 
